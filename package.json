@@ -1,0 +1,21 @@
+{
+  "name": "procurechain-intelligence-hub",
+  "private": true,
+  "version": "0.1.0",
+  "description": "ProcureChain Intelligence Hub — AI-powered procurement intelligence platform (standalone)",
+  "scripts": {
+    "dev:web": "pnpm --filter @procurechain/web dev",
+    "dev:api": "pnpm --filter @procurechain/api start:dev",
+    "build": "pnpm --filter @procurechain/api build && pnpm --filter @procurechain/web build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "prisma:generate": "pnpm --filter @procurechain/api prisma:generate",
+    "prisma:migrate": "pnpm --filter @procurechain/api prisma:migrate",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.0.0"
+}

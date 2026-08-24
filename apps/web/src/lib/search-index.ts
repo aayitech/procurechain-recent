@@ -1,0 +1,98 @@
+export interface SearchEntry {
+  label: string;
+  href: string;
+  group: 'Market Intelligence' | 'Calculators' | 'Categories' | 'Pages';
+  description: string;
+}
+
+export const SEARCH_INDEX: SearchEntry[] = [
+  // Market Intelligence — economic indicators
+  { label: 'US Consumer Price Index (CPI)', href: '/market-intelligence/commodity/CPI_US', group: 'Market Intelligence', description: 'Economic Indicators' },
+  { label: 'US Producer Price Index (PPI)', href: '/market-intelligence/commodity/PPI_US', group: 'Market Intelligence', description: 'Economic Indicators' },
+  { label: 'US Federal Funds Rate', href: '/market-intelligence/commodity/FED_FUNDS_RATE', group: 'Market Intelligence', description: 'Economic Indicators' },
+  { label: 'US Industrial Production Index', href: '/market-intelligence/commodity/INDUSTRIAL_PRODUCTION_US', group: 'Market Intelligence', description: 'Economic Indicators' },
+  { label: 'Inflation — South Africa', href: '/market-intelligence/commodity/INFLATION_ZAF', group: 'Market Intelligence', description: 'Economic Indicators (IMF)' },
+  { label: 'Inflation — Egypt', href: '/market-intelligence/commodity/INFLATION_EGY', group: 'Market Intelligence', description: 'Economic Indicators (IMF)' },
+  { label: 'Inflation — China', href: '/market-intelligence/commodity/INFLATION_CHN', group: 'Market Intelligence', description: 'Economic Indicators (IMF)' },
+  { label: 'Inflation — Netherlands', href: '/market-intelligence/commodity/INFLATION_NLD', group: 'Market Intelligence', description: 'Economic Indicators (IMF)' },
+  { label: 'Inflation — United Kingdom', href: '/market-intelligence/commodity/INFLATION_GBR', group: 'Market Intelligence', description: 'Economic Indicators (IMF)' },
+  { label: 'Inflation — Brazil', href: '/market-intelligence/commodity/INFLATION_BRA', group: 'Market Intelligence', description: 'Economic Indicators (IMF)' },
+  { label: 'Inflation — Singapore', href: '/market-intelligence/commodity/INFLATION_SGP', group: 'Market Intelligence', description: 'Economic Indicators (IMF)' },
+  { label: 'Inflation — United States', href: '/market-intelligence/commodity/INFLATION_USA', group: 'Market Intelligence', description: 'Economic Indicators (IMF)' },
+  { label: 'Real GDP Growth — South Africa', href: '/market-intelligence/commodity/GDP_GROWTH_ZAF', group: 'Market Intelligence', description: 'Economic Indicators (IMF)' },
+  { label: 'Real GDP Growth — Egypt', href: '/market-intelligence/commodity/GDP_GROWTH_EGY', group: 'Market Intelligence', description: 'Economic Indicators (IMF)' },
+  { label: 'Real GDP Growth — China', href: '/market-intelligence/commodity/GDP_GROWTH_CHN', group: 'Market Intelligence', description: 'Economic Indicators (IMF)' },
+  { label: 'Real GDP Growth — Netherlands', href: '/market-intelligence/commodity/GDP_GROWTH_NLD', group: 'Market Intelligence', description: 'Economic Indicators (IMF)' },
+  { label: 'Real GDP Growth — United Kingdom', href: '/market-intelligence/commodity/GDP_GROWTH_GBR', group: 'Market Intelligence', description: 'Economic Indicators (IMF)' },
+  { label: 'Real GDP Growth — Brazil', href: '/market-intelligence/commodity/GDP_GROWTH_BRA', group: 'Market Intelligence', description: 'Economic Indicators (IMF)' },
+  { label: 'Real GDP Growth — Singapore', href: '/market-intelligence/commodity/GDP_GROWTH_SGP', group: 'Market Intelligence', description: 'Economic Indicators (IMF)' },
+  { label: 'Real GDP Growth — United States', href: '/market-intelligence/commodity/GDP_GROWTH_USA', group: 'Market Intelligence', description: 'Economic Indicators (IMF)' },
+  // Market Intelligence — commodities
+  { label: 'Crude Oil (WTI)', href: '/market-intelligence/commodity/WTI', group: 'Market Intelligence', description: 'Fuel & Energy' },
+  { label: 'Crude Oil (Brent)', href: '/market-intelligence/commodity/BRENT', group: 'Market Intelligence', description: 'Fuel & Energy' },
+  { label: 'Natural Gas', href: '/market-intelligence/commodity/NATURAL_GAS', group: 'Market Intelligence', description: 'Fuel & Energy' },
+  { label: 'Copper', href: '/market-intelligence/commodity/COPPER', group: 'Market Intelligence', description: 'Metals' },
+  { label: 'Aluminium', href: '/market-intelligence/commodity/ALUMINUM', group: 'Market Intelligence', description: 'Metals' },
+  { label: 'Steel (Hot-Rolled Coil)', href: '/market-intelligence/commodity/STEEL_HRC', group: 'Market Intelligence', description: 'Metals' },
+  { label: 'Wheat', href: '/market-intelligence/commodity/WHEAT', group: 'Market Intelligence', description: 'Agriculture' },
+  { label: 'Corn', href: '/market-intelligence/commodity/CORN', group: 'Market Intelligence', description: 'Agriculture' },
+  { label: 'Containerboard (Packaging)', href: '/market-intelligence/commodity/PACKAGING_BOARD', group: 'Market Intelligence', description: 'Packaging' },
+  { label: 'Pulp (Paper)', href: '/market-intelligence/commodity/PULP', group: 'Market Intelligence', description: 'Paper' },
+  { label: 'Polyethylene (HDPE)', href: '/market-intelligence/commodity/HDPE', group: 'Market Intelligence', description: 'Plastics' },
+  { label: 'Benzene', href: '/market-intelligence/commodity/BENZENE', group: 'Market Intelligence', description: 'Chemicals' },
+  { label: 'Softwood Lumber', href: '/market-intelligence/commodity/LUMBER', group: 'Market Intelligence', description: 'Construction Materials' },
+  { label: 'Sea Freight (40ft Container)', href: '/market-intelligence/commodity/SEA_FREIGHT', group: 'Market Intelligence', description: 'Logistics & Freight' },
+  { label: 'Road Freight', href: '/market-intelligence/commodity/ROAD_FREIGHT', group: 'Market Intelligence', description: 'Logistics & Freight' },
+  { label: 'Iron Ore', href: '/market-intelligence/commodity/IRON_ORE', group: 'Market Intelligence', description: 'Metals' },
+  { label: 'Coal (Australian)', href: '/market-intelligence/commodity/COAL', group: 'Market Intelligence', description: 'Fuel & Energy' },
+  { label: 'Zinc', href: '/market-intelligence/commodity/ZINC', group: 'Market Intelligence', description: 'Metals' },
+  { label: 'Nickel', href: '/market-intelligence/commodity/NICKEL', group: 'Market Intelligence', description: 'Metals' },
+  { label: 'Urea (Fertilizer)', href: '/market-intelligence/commodity/UREA', group: 'Market Intelligence', description: 'Chemicals' },
+  { label: 'Cotton', href: '/market-intelligence/commodity/COTTON', group: 'Market Intelligence', description: 'Agriculture' },
+  { label: 'Sugar', href: '/market-intelligence/commodity/SUGAR', group: 'Market Intelligence', description: 'Agriculture' },
+  { label: 'Palm Oil', href: '/market-intelligence/commodity/PALM_OIL', group: 'Market Intelligence', description: 'Agriculture' },
+  { label: 'Gold', href: '/market-intelligence/commodity/GOLD', group: 'Market Intelligence', description: 'Metals' },
+  // Market Intelligence — FX
+  { label: 'USD / EUR', href: '/market-intelligence/fx/EUR', group: 'Market Intelligence', description: 'Exchange rate' },
+  { label: 'USD / GBP', href: '/market-intelligence/fx/GBP', group: 'Market Intelligence', description: 'Exchange rate' },
+  { label: 'USD / ZAR', href: '/market-intelligence/fx/ZAR', group: 'Market Intelligence', description: 'Exchange rate' },
+  { label: 'USD / NGN', href: '/market-intelligence/fx/NGN', group: 'Market Intelligence', description: 'Exchange rate' },
+  { label: 'USD / KES', href: '/market-intelligence/fx/KES', group: 'Market Intelligence', description: 'Exchange rate' },
+  { label: 'USD / EGP', href: '/market-intelligence/fx/EGP', group: 'Market Intelligence', description: 'Exchange rate' },
+  { label: 'USD / GHS', href: '/market-intelligence/fx/GHS', group: 'Market Intelligence', description: 'Exchange rate' },
+  { label: 'USD / CNY', href: '/market-intelligence/fx/CNY', group: 'Market Intelligence', description: 'Exchange rate' },
+  { label: 'USD / BRL', href: '/market-intelligence/fx/BRL', group: 'Market Intelligence', description: 'Exchange rate' },
+  { label: 'USD / SGD', href: '/market-intelligence/fx/SGD', group: 'Market Intelligence', description: 'Exchange rate' },
+
+  // Calculators
+  { label: 'Total Cost of Ownership Calculator', href: '/calculators/tco', group: 'Calculators', description: 'Compare full lifecycle cost' },
+  { label: 'Landed Cost Calculator', href: '/calculators/landed-cost', group: 'Calculators', description: 'Freight, duty, and fees' },
+  { label: 'Supplier Comparison Calculator', href: '/calculators/supplier-comparison', group: 'Calculators', description: 'Weighted scoring' },
+  { label: 'Currency Impact Calculator', href: '/calculators/currency-impact', group: 'Calculators', description: 'FX exposure modelling' },
+  { label: 'Freight Cost Calculator', href: '/calculators/freight-cost', group: 'Calculators', description: 'Chargeable weight and surcharges' },
+  { label: 'EOQ Calculator', href: '/calculators/eoq', group: 'Calculators', description: 'Economic order quantity' },
+  { label: 'Savings Calculator', href: '/calculators/savings', group: 'Calculators', description: 'Negotiated savings tracking' },
+  { label: 'Carbon Footprint Calculator', href: '/calculators/carbon-footprint', group: 'Calculators', description: 'Illustrative emissions estimate' },
+  { label: 'Working Capital Calculator', href: '/calculators/working-capital', group: 'Calculators', description: 'Payment terms impact' },
+  { label: 'RFQ Efficiency Calculator', href: '/calculators/rfq-efficiency', group: 'Calculators', description: 'RFQ process time and cost' },
+  { label: 'Procurement ROI Calculator', href: '/calculators/procurement-roi', group: 'Calculators', description: 'Technology/transformation ROI' },
+  { label: 'Bid Evaluation Calculator', href: '/calculators/bid-evaluation', group: 'Calculators', description: 'Weighted scorecard with mandatory pass/fail' },
+
+  // Categories
+  { label: 'Packaging Category', href: '/#categories', group: 'Categories', description: 'Market outlook & strategy' },
+  { label: 'Manufacturing Category', href: '/#categories', group: 'Categories', description: 'Market outlook & strategy' },
+  { label: 'Construction Category', href: '/#categories', group: 'Categories', description: 'Market outlook & strategy' },
+  { label: 'IT Category', href: '/#categories', group: 'Categories', description: 'Market outlook & strategy' },
+  { label: 'Fleet Category', href: '/#categories', group: 'Categories', description: 'Market outlook & strategy' },
+
+  // Pages
+  { label: 'Procurement Health Check', href: '/health-check', group: 'Pages', description: 'Assess your procurement maturity in 3 minutes' },
+  { label: 'Procurement Market Brief', href: '/market-brief', group: 'Pages', description: 'Weekly procurement intelligence, grounded in real data' },
+  { label: 'AI Procurement Assistant', href: '/assistant', group: 'Pages', description: 'Ask a procurement question' },
+  { label: 'Benchmarking Assessment', href: '/benchmarking', group: 'Pages', description: 'Procurement maturity score' },
+  { label: 'Knowledge Centre', href: '/knowledge-centre', group: 'Pages', description: 'Guides, templates, articles' },
+  { label: 'How to Run an RFQ', href: '/knowledge-centre/how-to-run-an-rfq', group: 'Pages', description: 'Learning path' },
+  { label: 'How to Compare Supplier Quotations', href: '/knowledge-centre/how-to-compare-supplier-quotations', group: 'Pages', description: 'Learning path' },
+  { label: 'How to Calculate Total Cost of Ownership', href: '/knowledge-centre/how-to-calculate-total-cost-of-ownership', group: 'Pages', description: 'Learning path' },
+  { label: 'Book a Demo', href: '/#book-demo', group: 'Pages', description: 'Talk to the team' },
+];

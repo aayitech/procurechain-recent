@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  MICROSOFT
+  LINKEDIN
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  passwordHash String?
+  firstName    String?
+  lastName     String?
+  company      String?
+  country      String?
+  industry     String?
+  jobTitle     String?
+  role         UserRole     @default(USER)
+  provider     AuthProvider @default(EMAIL)
+  providerId   String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([email])
+}
+
+enum LeadSource {
+  NEWSLETTER
+  DEMO_REQUEST
+  CALCULATOR_DOWNLOAD
+  BENCHMARK_ASSESSMENT
+  ASSESSMENT
+  GENERAL
+}
+
+enum LeadStatus {
+  NEW
+  SYNCED
+  SYNC_FAILED
+}
+
+model Lead {
+  id                String     @id @default(cuid())
+  firstName         String
+  lastName          String?
+  email             String
+  company           String?
+  phone             String?
+  country           String?
+  industry          String?
+  role              String?
+  annualSpendBand   String?
+  categoriesOfInterest String[] @default([])
+  preferredLanguage String?    @default("en")
+  newsletterOptIn   Boolean    @default(true)
+  source            LeadSource
+  sourceDetail      String?
+  status            LeadStatus @default(NEW)
+  syncedAt          DateTime?
+  syncError         String?
+  createdAt         DateTime   @default(now())
+  customFields      Json?
+  healthCheckSubmission HealthCheckSubmission?
+  engagementEvents  EngagementEvent[]
+
+  @@index([email])
+  @@index([source])
+  @@index([status])
+}
+
+model EngagementEvent {
+  id        String   @id @default(cuid())
+  sessionId String
+  leadId    String?
+  lead      Lead?    @relation(fields: [leadId], references: [id])
+  eventType String
+  points    Int
+  createdAt DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([leadId])
+}
+
+enum MarketBriefStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model MarketBrief {
+  id          String            @id @default(cuid())
+  weekOf      DateTime          @unique
+  status      MarketBriefStatus @default(DRAFT)
+  content     Json
+  model       String
+  generatedAt DateTime          @default(now())
+  publishedAt DateTime?
+
+  @@index([status, weekOf])
+}
+
+model HealthCheckSubmission {
+  id              String   @id @default(cuid())
+  answers         Json
+  dimensionScores Json
+  overallScore    Float
+  maturityLevel   String
+  leadId          String?  @unique
+  lead            Lead?    @relation(fields: [leadId], references: [id])
+  createdAt       DateTime @default(now())
+}
+
+model Currency {
+  code   String @id
+  name   String
+  rates  ExchangeRate[]
+}
+
+model ExchangeRate {
+  id         String   @id @default(cuid())
+  baseCode   String
+  quoteCode  String
+  rate       Float
+  asOf       DateTime
+  source     String
+  currency   Currency @relation(fields: [quoteCode], references: [code])
+  createdAt  DateTime @default(now())
+
+  @@unique([baseCode, quoteCode, asOf])
+  @@index([baseCode, quoteCode])
+}
+
+model Commodity {
+  id          String            @id @default(cuid())
+  symbol      String            @unique
+  name        String
+  unit        String
+  category    String
+  // Determines which comparison periods are meaningful — a 7-day change on
+  // an annual indicator is not a real number, it's noise from date-window
+  // arithmetic landing on the previous year's single data point.
+  frequency   String            @default("daily")
+  prices      CommodityPrice[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model CommodityPrice {
+  id          String    @id @default(cuid())
+  commodityId String
+  commodity   Commodity @relation(fields: [commodityId], references: [id])
+  price       Float
+  currency    String    @default("USD")
+  asOf        DateTime
+  source      String
+  createdAt   DateTime  @default(now())
+
+  @@unique([commodityId, asOf])
+  @@index([commodityId, asOf])
+}

@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Dark theme (default — this product is dark-first). Values are
+     space-separated RGB channels (not hex) so Tailwind's opacity
+     modifiers (e.g. bg-accent/30) can compose them via rgb(var(...) / a). */
+  --color-canvas: 10 14 20;
+  --color-canvas-raised: 17 23 34;
+  --color-canvas-overlay: 22 29 43;
+  --color-border: 35 43 59;
+  --color-border-subtle: 26 33 47;
+  --color-ink: 230 233 239;
+  --color-ink-muted: 139 147 167;
+  --color-ink-faint: 91 100 120;
+  --color-accent: 59 130 246;
+  --color-accent-hover: 96 165 250;
+  --color-accent-muted: 29 78 216;
+  --color-positive: 34 197 94;
+  --color-negative: 239 68 68;
+  --color-warning: 245 158 11;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.03);
+
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --color-canvas: 255 255 255;
+  --color-canvas-raised: 247 248 250;
+  --color-canvas-overlay: 238 240 244;
+  --color-border: 226 229 235;
+  --color-border-subtle: 236 238 242;
+  --color-ink: 18 21 28;
+  --color-ink-muted: 86 95 115;
+  --color-ink-faint: 136 145 163;
+  --color-accent: 37 99 235;
+  --color-accent-hover: 29 78 216;
+  --color-accent-muted: 30 64 175;
+  --color-positive: 22 163 74;
+  --color-negative: 220 38 38;
+  --color-warning: 217 119 6;
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06), 0 0 0 1px rgba(16, 24, 40, 0.06);
+
+  color-scheme: light;
+}
+
+body {
+  @apply bg-canvas text-ink antialiased transition-colors duration-200;
+}
+
+::selection {
+  @apply bg-accent/30 text-ink;
+}
+
+.card {
+  @apply rounded-xl2 border border-border bg-canvas-raised shadow-card;
+}
+
+.container-page {
+  @apply mx-auto w-full max-w-7xl px-6;
+}
