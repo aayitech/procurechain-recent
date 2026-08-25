@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { Menu, Search, X } from 'lucide-react';
 import { useUiStore } from '@/store/ui-store';
@@ -54,13 +55,16 @@ export function Header() {
       }`}
     >
       <div className="container-page flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight text-ink">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-accent text-sm font-bold text-white">
-            P
-          </span>
-          ProcureChain
-          <span className="ml-1 hidden text-xs font-normal text-ink-faint sm:inline">Intelligence Hub</span>
-        </Link>
+        <Link href="/" className="flex items-center">
+ <Image
+  src="/logo.png"
+  alt="ProcureChain"
+  width={180}
+  height={45}
+  priority
+  className="h-[5rem] w-auto object-contain"
+/>
+</Link>
 
         <nav className="hidden items-center gap-6 lg:flex">
           <NavDropdown label="Market Intelligence" items={MARKET_INTELLIGENCE_ITEMS} />
