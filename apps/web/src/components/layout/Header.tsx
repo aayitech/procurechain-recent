@@ -55,17 +55,20 @@ export function Header() {
       }`}
     >
       <div className="container-page flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center">
- <Image
-  src="/logo.png"
-  alt="ProcureChain"
-  width={180}
-  height={45}
-  priority
-  className="h-[5rem] w-auto object-contain"
-/>
-</Link>
+        <Link href="/" className="flex items-center gap-2">
+  <Image
+    src="/logo.png"
+    alt="ProcureChain"
+    width={180}
+    height={80}
+    priority
+    className="h-[4rem] w-auto object-contain"
+  />
 
+  <span className="hidden text-xs font-normal text-ink-faint sm:inline">
+    Intelligence Hub
+  </span>
+</Link>
         <nav className="hidden items-center gap-6 lg:flex">
           <NavDropdown label="Market Intelligence" items={MARKET_INTELLIGENCE_ITEMS} />
           <NavDropdown label="Categories" items={CATEGORY_ITEMS} />
