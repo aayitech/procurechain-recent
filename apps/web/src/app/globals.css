@@ -50,6 +50,8 @@
 
 body {
   @apply bg-canvas text-ink antialiased transition-colors duration-200;
+    overflow-x: hidden;
+
 }
 
 ::selection {
