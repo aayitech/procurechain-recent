@@ -113,14 +113,19 @@ export class CloudflareAiProvider {
   }
 
   private get accountId(): string | undefined {
-    return this.config.get<string>('CLOUDFLARE_ACCOUNT_ID');
+    return this.cleanConfigValue('CLOUDFLARE_ACCOUNT_ID');
   }
 
   private get apiToken(): string | undefined {
-    return this.config.get<string>('CLOUDFLARE_AI_API_TOKEN');
+    return this.cleanConfigValue('CLOUDFLARE_AI_API_TOKEN');
   }
 
   private get model(): string {
-    return this.config.get<string>('CLOUDFLARE_AI_MODEL') ?? DEFAULT_CLOUDFLARE_MODEL;
+    return this.cleanConfigValue('CLOUDFLARE_AI_MODEL') ?? DEFAULT_CLOUDFLARE_MODEL;
+  }
+
+  private cleanConfigValue(name: string): string | undefined {
+    const value = this.config.get<string>(name)?.trim();
+    return value || undefined;
   }
 }
