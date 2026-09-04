@@ -50,9 +50,10 @@ export function AssistantChat({ initialQuestion }: { initialQuestion?: string })
           setMessages((prev) => [...prev, { role: 'assistant', content: data.answer, dataAsOf: data.dataAsOf }]);
         },
         onError: (error) => {
+          const errorMessage = (error as Error).message ?? '';
           const message =
-            (error as Error).message?.includes('not configured')
-              ? "The AI Assistant isn't available on this backend right now. Please ask an administrator to check the Ollama connection."
+            /not configured|authentication failed|cloudflare workers ai/i.test(errorMessage)
+              ? "The AI Assistant isn't available on this backend right now. Please ask an administrator to check the AI service configuration."
               : "Couldn't reach the AI Assistant backend right now. This needs the API server running — it isn't in this preview environment.";
           setMessages((prev) => [...prev, { role: 'assistant', content: message, isError: true }]);
         },

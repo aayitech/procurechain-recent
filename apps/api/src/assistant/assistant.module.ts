@@ -3,12 +3,12 @@ import { MarketDataModule } from '../market-data/market-data.module';
 import { NewsModule } from '../news/news.module';
 import { AssistantController } from './assistant.controller';
 import { AssistantService } from './assistant.service';
-import { LocalLlmProvider } from './local-llm.provider';
+import { CloudflareAiProvider } from './cloudflare-ai.provider';
 
 @Module({
   imports: [MarketDataModule, NewsModule],
   controllers: [AssistantController],
-  providers: [AssistantService, LocalLlmProvider],
-  exports: [LocalLlmProvider],
+  providers: [AssistantService, CloudflareAiProvider],
+  exports: [CloudflareAiProvider],
 })
 export class AssistantModule {}

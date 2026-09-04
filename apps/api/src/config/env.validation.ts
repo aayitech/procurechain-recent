@@ -38,11 +38,15 @@ class EnvironmentVariables {
 
   @IsString()
   @IsOptional()
-  OLLAMA_URL?: string;
+  CLOUDFLARE_ACCOUNT_ID?: string;
 
   @IsString()
   @IsOptional()
-  OLLAMA_MODEL?: string;
+  CLOUDFLARE_AI_API_TOKEN?: string;
+
+  @IsString()
+  @IsOptional()
+  CLOUDFLARE_AI_MODEL?: string;
 
   @IsString()
   @IsOptional()

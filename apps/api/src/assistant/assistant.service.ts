@@ -3,7 +3,7 @@ import type Redis from 'ioredis';
 import { REDIS_CLIENT } from '../redis/redis.module';
 import { MarketDataService } from '../market-data/market-data.service';
 import { NewsService } from '../news/news.service';
-import { LocalLlmProvider } from './local-llm.provider';
+import { CloudflareAiProvider } from './cloudflare-ai.provider';
 
 const SYSTEM_INSTRUCTION = `You are the ProcureChain AI Procurement Assistant, embedded in a procurement intelligence platform.
 
@@ -57,15 +57,15 @@ export class AssistantService {
   private readonly logger = new Logger(AssistantService.name);
 
   constructor(
-    private readonly localLlm: LocalLlmProvider,
+    private readonly ai: CloudflareAiProvider,
     private readonly marketData: MarketDataService,
     private readonly news: NewsService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {}
 
   async ask(question: string): Promise<AssistantAnswer> {
-    if (!this.localLlm.isConfigured()) {
-      throw new ServiceUnavailableException('AI Assistant is not configured (Ollama is unavailable)');
+    if (!this.ai.isConfigured()) {
+      throw new ServiceUnavailableException('AI Assistant is not configured (Cloudflare Workers AI credentials are missing)');
     }
 
     let dataAsOf: string | null = null;
@@ -87,14 +87,21 @@ export class AssistantService {
 
     const userMessage = `Market data snapshot:\n${snapshotText}\n\nUser question: ${question}`;
 
-    const answer = await this.localLlm.generate(SYSTEM_INSTRUCTION, userMessage);
+    let answer: string;
+    try {
+      answer = await this.ai.generate(SYSTEM_INSTRUCTION, userMessage);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown Cloudflare Workers AI error';
+      this.logger.error(`Assistant generation failed: ${message}`);
+      throw new ServiceUnavailableException(this.ai.publicConfigurationError(message));
+    }
 
-    return { answer, dataAsOf, model: this.localLlm.modelName };
+    return { answer, dataAsOf, model: this.ai.modelName };
   }
 
   async getMarketStory(type: 'commodity' | 'fx', symbol: string): Promise<MarketStoryResult> {
-    if (!this.localLlm.isConfigured()) {
-      throw new ServiceUnavailableException('AI Assistant is not configured (Ollama is unavailable)');
+    if (!this.ai.isConfigured()) {
+      throw new ServiceUnavailableException('AI Assistant is not configured (Cloudflare Workers AI credentials are missing)');
     }
 
     const cacheKey = `market-story:${type}:${symbol.toUpperCase()}`;
@@ -135,13 +142,20 @@ Data as of: ${item.asOf}
 Recent headlines from tracked feeds:
 ${headlinesText}`;
 
-    const story = await this.localLlm.generate(MARKET_STORY_INSTRUCTION, userMessage);
+    let story: string;
+    try {
+      story = await this.ai.generate(MARKET_STORY_INSTRUCTION, userMessage);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown Cloudflare Workers AI error';
+      this.logger.error(`Market story generation failed: ${message}`);
+      throw new ServiceUnavailableException(this.ai.publicConfigurationError(message));
+    }
     const result: MarketStoryResult = {
       symbol: symbol.toUpperCase(),
       story,
       dataAsOf: item.asOf,
       generatedAt: new Date().toISOString(),
-      model: this.localLlm.modelName,
+      model: this.ai.modelName,
     };
 
     await this.redis.set(cacheKey, JSON.stringify(result), 'EX', MARKET_STORY_CACHE_TTL_SECONDS);

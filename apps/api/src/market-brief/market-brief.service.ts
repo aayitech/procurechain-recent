@@ -6,7 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { MarketDataService } from '../market-data/market-data.service';
 import { NewsService, type NewsArticle } from '../news/news.service';
 import { LogisticsService } from '../logistics/logistics.service';
-import { LocalLlmProvider } from '../assistant/local-llm.provider';
+import { CloudflareAiProvider } from '../assistant/cloudflare-ai.provider';
 import {
   CATEGORY_KEYWORDS,
   DEEP_DIVE_INSTRUCTION,
@@ -122,7 +122,7 @@ export class MarketBriefService {
     private readonly marketData: MarketDataService,
     private readonly news: NewsService,
     private readonly logistics: LogisticsService,
-    private readonly localLlm: LocalLlmProvider,
+    private readonly ai: CloudflareAiProvider,
     private readonly config: ConfigService,
   ) {}
 
@@ -133,8 +133,8 @@ export class MarketBriefService {
 
   @Cron(CronExpression.EVERY_WEEK)
   async generateDraft() {
-    if (!this.localLlm.isConfigured()) {
-      this.logger.warn('Skipping market brief generation: Ollama is unavailable');
+    if (!this.ai.isConfigured()) {
+      this.logger.warn('Skipping market brief generation: Cloudflare Workers AI is unavailable');
       return null;
     }
 
@@ -197,22 +197,22 @@ ${headlineLines || 'No headlines available.'}`;
     // Call 1: the main 11-section prose brief.
     let raw: string;
     try {
-      raw = await this.localLlm.generate(
+      raw = await this.ai.generate(
         MARKET_BRIEF_SYSTEM_INSTRUCTION,
         snapshotText,
         MARKET_BRIEF_MAX_OUTPUT_TOKENS,
       );
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown Ollama error';
+      const message = error instanceof Error ? error.message : 'Unknown Cloudflare Workers AI error';
       this.logger.error(`Market Brief generation failed: ${message}`);
       throw new ServiceUnavailableException(
-        'Could not generate the Market Brief with Ollama. Confirm that Ollama is running and the configured model is installed, then try again.',
+        this.ai.publicConfigurationError(message),
       );
     }
     const sections = parseSections(raw);
 
-    // Real, computed (not AI) selections below — the local LLM is only used for
-    // the two grounded narrative touches (top-story reasons, deep dive).
+    // Real, computed selections below — the AI only writes two grounded
+    // narrative touches (top-story reasons and the deep dive).
     const topStoryArticles = articles.slice(0, TOP_STORIES_COUNT);
     const deepDiveArticle = this.pickDeepDiveArticle(articles, significant);
 
@@ -220,7 +220,7 @@ ${headlineLines || 'No headlines available.'}`;
     if (topStoryArticles.length > 0) {
       const prompt = topStoryArticles.map((a) => `TITLE: ${a.title}\nDESCRIPTION: ${a.description}\nSOURCE: ${a.source}`).join('\n\n');
       try {
-        const response = await this.localLlm.generate(
+        const response = await this.ai.generate(
           TOP_STORIES_INSTRUCTION,
           prompt,
           MARKET_BRIEF_SUPPORTING_OUTPUT_TOKENS,
@@ -244,7 +244,7 @@ ${headlineLines || 'No headlines available.'}`;
     if (deepDiveArticle) {
       try {
         const prompt = `Headline: ${deepDiveArticle.title}\nDescription: ${deepDiveArticle.description}\nSource: ${deepDiveArticle.source}\n\nMarket snapshot for context:\n${snapshotText}`;
-        const response = await this.localLlm.generate(
+        const response = await this.ai.generate(
           DEEP_DIVE_INSTRUCTION,
           prompt,
           MARKET_BRIEF_SUPPORTING_OUTPUT_TOKENS,
@@ -285,8 +285,8 @@ ${headlineLines || 'No headlines available.'}`;
     const contentJson = content as unknown as Prisma.InputJsonValue;
     const brief = await this.prisma.marketBrief.upsert({
       where: { weekOf },
-      update: { content: contentJson, model: this.localLlm.modelName, generatedAt: new Date() },
-      create: { weekOf, content: contentJson, model: this.localLlm.modelName, status: 'DRAFT' },
+      update: { content: contentJson, model: this.ai.modelName, generatedAt: new Date() },
+      create: { weekOf, content: contentJson, model: this.ai.modelName, status: 'DRAFT' },
     });
 
     if (!this.requiresApproval()) {
