@@ -1,5 +1,5 @@
 import { Controller, ForbiddenException, Get, Param, Post, Req, Res, UseGuards } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { MarketDataService } from './market-data.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -52,6 +52,7 @@ export class MarketDataController {
   }
 
   @Post('refresh')
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   async refresh(@Req() req: Request) {
     const user = req.user as JwtPayload;

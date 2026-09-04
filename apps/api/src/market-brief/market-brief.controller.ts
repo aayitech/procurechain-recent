@@ -1,5 +1,5 @@
 import { Controller, ForbiddenException, Get, NotFoundException, Param, Post, Req, UseGuards } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { MarketBriefService } from './market-brief.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -16,6 +16,7 @@ export class MarketBriefController {
   }
 
   @Get('drafts')
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   async listDrafts(@Req() req: Request) {
     this.requireAdmin(req);
@@ -30,6 +31,7 @@ export class MarketBriefController {
   }
 
   @Post('generate')
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   async generate(@Req() req: Request) {
     this.requireAdmin(req);
@@ -37,6 +39,7 @@ export class MarketBriefController {
   }
 
   @Post(':id/publish')
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   async publish(@Req() req: Request, @Param('id') id: string) {
     this.requireAdmin(req);
