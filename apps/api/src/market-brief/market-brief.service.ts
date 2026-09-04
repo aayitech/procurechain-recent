@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Prisma } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -6,7 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { MarketDataService } from '../market-data/market-data.service';
 import { NewsService, type NewsArticle } from '../news/news.service';
 import { LogisticsService } from '../logistics/logistics.service';
-import { GeminiProvider } from '../assistant/gemini.provider';
+import { LocalLlmProvider } from '../assistant/local-llm.provider';
 import {
   CATEGORY_KEYWORDS,
   DEEP_DIVE_INSTRUCTION,
@@ -19,6 +19,8 @@ import {
 const TOP_STORIES_COUNT = 3;
 const VOLATILITY_LOW = 0.8;
 const VOLATILITY_MODERATE = 1.8;
+const MARKET_BRIEF_MAX_OUTPUT_TOKENS = 700;
+const MARKET_BRIEF_SUPPORTING_OUTPUT_TOKENS = 384;
 
 function mostRecentMonday(date: Date): Date {
   const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
@@ -120,7 +122,7 @@ export class MarketBriefService {
     private readonly marketData: MarketDataService,
     private readonly news: NewsService,
     private readonly logistics: LogisticsService,
-    private readonly gemini: GeminiProvider,
+    private readonly localLlm: LocalLlmProvider,
     private readonly config: ConfigService,
   ) {}
 
@@ -131,8 +133,8 @@ export class MarketBriefService {
 
   @Cron(CronExpression.EVERY_WEEK)
   async generateDraft() {
-    if (!this.gemini.isConfigured()) {
-      this.logger.warn('Skipping market brief generation: GEMINI_API_KEY not set');
+    if (!this.localLlm.isConfigured()) {
+      this.logger.warn('Skipping market brief generation: Ollama is unavailable');
       return null;
     }
 
@@ -148,6 +150,12 @@ export class MarketBriefService {
       this.news.getLatest().catch(() => [] as NewsArticle[]),
       this.logistics.getPortConditions().catch(() => null),
     ]);
+
+    if (dashboard.fx.length === 0 && dashboard.commodities.length === 0) {
+      throw new ServiceUnavailableException(
+        'Cannot generate a Market Brief because no market data is stored yet. Run the authenticated POST /market-data/refresh endpoint, wait for it to finish, then try again.',
+      );
+    }
 
     const significant = [
       ...dashboard.commodities
@@ -187,10 +195,23 @@ Recent trade-press headlines:
 ${headlineLines || 'No headlines available.'}`;
 
     // Call 1: the main 11-section prose brief.
-    const raw = await this.gemini.generate(MARKET_BRIEF_SYSTEM_INSTRUCTION, snapshotText, 4096);
+    let raw: string;
+    try {
+      raw = await this.localLlm.generate(
+        MARKET_BRIEF_SYSTEM_INSTRUCTION,
+        snapshotText,
+        MARKET_BRIEF_MAX_OUTPUT_TOKENS,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown Ollama error';
+      this.logger.error(`Market Brief generation failed: ${message}`);
+      throw new ServiceUnavailableException(
+        'Could not generate the Market Brief with Ollama. Confirm that Ollama is running and the configured model is installed, then try again.',
+      );
+    }
     const sections = parseSections(raw);
 
-    // Real, computed (not AI) selections below — Gemini is only used for
+    // Real, computed (not AI) selections below — the local LLM is only used for
     // the two grounded narrative touches (top-story reasons, deep dive).
     const topStoryArticles = articles.slice(0, TOP_STORIES_COUNT);
     const deepDiveArticle = this.pickDeepDiveArticle(articles, significant);
@@ -199,7 +220,11 @@ ${headlineLines || 'No headlines available.'}`;
     if (topStoryArticles.length > 0) {
       const prompt = topStoryArticles.map((a) => `TITLE: ${a.title}\nDESCRIPTION: ${a.description}\nSOURCE: ${a.source}`).join('\n\n');
       try {
-        const response = await this.gemini.generate(TOP_STORIES_INSTRUCTION, prompt, 1024);
+        const response = await this.localLlm.generate(
+          TOP_STORIES_INSTRUCTION,
+          prompt,
+          MARKET_BRIEF_SUPPORTING_OUTPUT_TOKENS,
+        );
         const reasons = parseTopStoryReasons(response);
         topStories = topStoryArticles.map((a) => ({
           title: a.title,
@@ -219,7 +244,11 @@ ${headlineLines || 'No headlines available.'}`;
     if (deepDiveArticle) {
       try {
         const prompt = `Headline: ${deepDiveArticle.title}\nDescription: ${deepDiveArticle.description}\nSource: ${deepDiveArticle.source}\n\nMarket snapshot for context:\n${snapshotText}`;
-        const response = await this.gemini.generate(DEEP_DIVE_INSTRUCTION, prompt, 1024);
+        const response = await this.localLlm.generate(
+          DEEP_DIVE_INSTRUCTION,
+          prompt,
+          MARKET_BRIEF_SUPPORTING_OUTPUT_TOKENS,
+        );
         deepDive = { title: deepDiveArticle.title, ...parseDeepDive(response), url: deepDiveArticle.link, imageUrl: deepDiveArticle.imageUrl, source: deepDiveArticle.source };
       } catch (error) {
         this.logger.warn(`Deep dive generation failed: ${(error as Error).message}`);
@@ -256,8 +285,8 @@ ${headlineLines || 'No headlines available.'}`;
     const contentJson = content as unknown as Prisma.InputJsonValue;
     const brief = await this.prisma.marketBrief.upsert({
       where: { weekOf },
-      update: { content: contentJson, model: 'gemini-flash-latest', generatedAt: new Date() },
-      create: { weekOf, content: contentJson, model: 'gemini-flash-latest', status: 'DRAFT' },
+      update: { content: contentJson, model: this.localLlm.modelName, generatedAt: new Date() },
+      create: { weekOf, content: contentJson, model: this.localLlm.modelName, status: 'DRAFT' },
     });
 
     if (!this.requiresApproval()) {

@@ -24,7 +24,7 @@ export function MarketBriefArchiveList() {
   if (isError || !data || data.length === 0) {
     return (
       <div className="card p-6 text-sm text-ink-muted">
-        No Market Briefs published yet — the backend API needs to be running with a Gemini key
+        No Market Briefs published yet — the backend API needs to be running with its local intelligence engine
         configured for these to generate. Check back soon.
       </div>
     );

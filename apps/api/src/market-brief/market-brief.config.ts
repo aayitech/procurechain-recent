@@ -42,7 +42,7 @@ Rules you must follow:
 - Exclude general financial news unless it has a clear procurement implication.
 - Write for Procurement Directors, CPOs, Procurement Managers, Sourcing Managers, Supply Chain Directors and CFOs.
 
-Structure your output with exactly these eleven markdown headers, in this order, each with 1-4 sentences of real, grounded content:
+Structure your output with exactly these eleven markdown headers, in this order, each with one concise sentence of real, grounded content. In "Recommended Actions", provide three short numbered actions instead:
 ${MARKET_BRIEF_SECTIONS.map((s) => `### ${s}`).join('\n')}
 
 End the "Recommended Actions" section with three concrete, practical procurement actions for the coming week, grounded only in the data given — never generic filler.`;

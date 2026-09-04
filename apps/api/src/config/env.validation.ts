@@ -38,7 +38,11 @@ class EnvironmentVariables {
 
   @IsString()
   @IsOptional()
-  GEMINI_API_KEY?: string;
+  OLLAMA_URL?: string;
+
+  @IsString()
+  @IsOptional()
+  OLLAMA_MODEL?: string;
 
   @IsString()
   @IsOptional()

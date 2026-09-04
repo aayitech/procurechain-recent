@@ -3,19 +3,23 @@ import type Redis from 'ioredis';
 import { REDIS_CLIENT } from '../redis/redis.module';
 import { MarketDataService } from '../market-data/market-data.service';
 import { NewsService } from '../news/news.service';
-import { GeminiProvider } from './gemini.provider';
+import { LocalLlmProvider } from './local-llm.provider';
 
 const SYSTEM_INSTRUCTION = `You are the ProcureChain AI Procurement Assistant, embedded in a procurement intelligence platform.
 
 You will be given a snapshot of REAL, currently-tracked market data (commodity prices, exchange rates, with 7-day and 30-day % changes). Ground your answer in this data wherever it's relevant.
 
 Rules you must follow:
+- Answer the user's question first, then provide supporting context when useful.
+- Use verified ProcureChain data whenever it is relevant to the question.
 - If the data snapshot doesn't cover something the user asks about (a specific supplier, a specific shipping line, a specific country's trade statistics, a price forecast, etc.), say plainly that you don't have that data — never invent specific numbers, company names, events, or statistics that aren't in the snapshot.
-- Never state a specific future price, percentage forecast, or "confidence score" — you can describe the recent trend from the data, but do not predict.
+- Never state a specific future price, percentage forecast, or "confidence score" — you can describe recent trends from the data, but do not predict.
 - Never give unqualified financial/trading advice ("buy now", "sell now"). You can offer balanced, general procurement considerations if asked, clearly framed as considerations, not directives.
+- Clearly distinguish verified facts from general procurement context or AI interpretation.
 - Be concise, specific, and cite the actual numbers from the snapshot when you use them.
-- If asked something entirely unrelated to procurement/markets, answer briefly and redirect to what you can help with.`;
-
+- When appropriate, recommend the most useful next action the user can take in ProcureChain, such as reviewing a relevant commodity, checking market data, using a calculator, or opening a relevant feature. Do not force a recommendation when it isn't useful.
+- If asked something entirely unrelated to procurement/markets, answer briefly and redirect to what you can help with.
+- Never claim to have performed an action, accessed data, or used a ProcureChain feature unless that information is actually provided in the context.`;
 const MARKET_STORY_INSTRUCTION = `You are the ProcureChain AI Procurement Assistant, generating a short "Market Story" for one commodity or currency pair, embedded on its detail page.
 
 You will be given: the item's real current price and real 7-day/30-day % change, and a list of real recent headlines from tracked trade-press feeds (which may or may not actually relate to this item).
@@ -53,15 +57,15 @@ export class AssistantService {
   private readonly logger = new Logger(AssistantService.name);
 
   constructor(
-    private readonly gemini: GeminiProvider,
+    private readonly localLlm: LocalLlmProvider,
     private readonly marketData: MarketDataService,
     private readonly news: NewsService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {}
 
   async ask(question: string): Promise<AssistantAnswer> {
-    if (!this.gemini.isConfigured()) {
-      throw new ServiceUnavailableException('AI Assistant is not configured (GEMINI_API_KEY missing)');
+    if (!this.localLlm.isConfigured()) {
+      throw new ServiceUnavailableException('AI Assistant is not configured (Ollama is unavailable)');
     }
 
     let dataAsOf: string | null = null;
@@ -83,13 +87,14 @@ export class AssistantService {
 
     const userMessage = `Market data snapshot:\n${snapshotText}\n\nUser question: ${question}`;
 
-    const answer = await this.gemini.generate(SYSTEM_INSTRUCTION, userMessage);
-    return { answer, dataAsOf, model: 'gemini-flash-latest' };
+    const answer = await this.localLlm.generate(SYSTEM_INSTRUCTION, userMessage);
+
+    return { answer, dataAsOf, model: this.localLlm.modelName };
   }
 
   async getMarketStory(type: 'commodity' | 'fx', symbol: string): Promise<MarketStoryResult> {
-    if (!this.gemini.isConfigured()) {
-      throw new ServiceUnavailableException('AI Assistant is not configured (GEMINI_API_KEY missing)');
+    if (!this.localLlm.isConfigured()) {
+      throw new ServiceUnavailableException('AI Assistant is not configured (Ollama is unavailable)');
     }
 
     const cacheKey = `market-story:${type}:${symbol.toUpperCase()}`;
@@ -130,14 +135,13 @@ Data as of: ${item.asOf}
 Recent headlines from tracked feeds:
 ${headlinesText}`;
 
-    const story = await this.gemini.generate(MARKET_STORY_INSTRUCTION, userMessage);
-
+    const story = await this.localLlm.generate(MARKET_STORY_INSTRUCTION, userMessage);
     const result: MarketStoryResult = {
       symbol: symbol.toUpperCase(),
       story,
       dataAsOf: item.asOf,
       generatedAt: new Date().toISOString(),
-      model: 'gemini-flash-latest',
+      model: this.localLlm.modelName,
     };
 
     await this.redis.set(cacheKey, JSON.stringify(result), 'EX', MARKET_STORY_CACHE_TTL_SECONDS);
