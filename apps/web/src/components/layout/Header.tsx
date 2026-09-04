@@ -70,8 +70,8 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border-subtle bg-white">
-<div className="container-page flex h-16 min-w-0 items-center justify-between gap-2 overflow-hidden">
-        {/* Logo */}
+<div className="container-page flex h-16 min-w-0 items-center justify-between gap-2 overflow-visible">
+  {/* Logo */}
         <Link href="/" className="flex shrink-0 items-center">
           <Image
             src="/logo.png"
