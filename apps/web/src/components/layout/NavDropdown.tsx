@@ -10,7 +10,15 @@ export interface NavDropdownItem {
   description: string;
 }
 
-export function NavDropdown({ label, items }: { label: string; items: NavDropdownItem[] }) {
+export function NavDropdown({
+  label,
+  href,
+  items,
+}: {
+  label: string;
+  href?: string;
+  items: NavDropdownItem[];
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -19,15 +27,32 @@ export function NavDropdown({ label, items }: { label: string; items: NavDropdow
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
     >
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 text-sm text-ink-muted transition-colors hover:text-ink"
-        aria-expanded={open}
-      >
-        {label}
-        <ChevronDown size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
+      {href ? (
+        <div className="flex items-center text-sm text-ink-muted transition-colors hover:text-ink">
+          <Link href={href} className="py-2" onClick={() => setOpen(false)}>
+            {label}
+          </Link>
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            className="flex h-8 w-7 items-center justify-center"
+            aria-label={`Toggle ${label} menu`}
+            aria-expanded={open}
+          >
+            <ChevronDown size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          className="flex items-center gap-1 py-2 text-sm text-ink-muted transition-colors hover:text-ink"
+          aria-expanded={open}
+        >
+          {label}
+          <ChevronDown size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+      )}
 
       {open && (
         <div className="absolute left-1/2 top-full z-50 w-72 -translate-x-1/2 pt-3">

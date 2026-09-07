@@ -91,6 +91,7 @@ export function Header() {
 <nav className="hidden min-w-0 flex-1 items-center justify-center gap-3 xl:flex">
             <NavDropdown
             label="Market Intelligence"
+            href="/market-intelligence"
             items={MARKET_INTELLIGENCE_ITEMS}
           />
 

@@ -14,7 +14,6 @@ import { HealthCheckGaugeCard } from '@/components/market-intelligence-home/Heal
 import { RelatedToolsCard } from '@/components/market-intelligence-home/RelatedToolsCard';
 import { CommodityList } from '@/components/market-intelligence/CommodityList';
 import { FxList } from '@/components/market-intelligence/FxList';
-import { ComingSoonCategories } from '@/components/market-intelligence/ComingSoonCategories';
 import { TradeRouteConditions } from '@/components/market-intelligence/TradeRouteConditions';
 
 export default function MarketIntelligencePage() {
@@ -79,10 +78,6 @@ export default function MarketIntelligencePage() {
           <TradeRouteConditions />
         </section>
 
-        <section className="mb-12">
-          <h2 className="mb-4 text-lg font-semibold text-ink">More categories</h2>
-          <ComingSoonCategories />
-        </section>
       </div>
 
       <div className="container-page pb-16">

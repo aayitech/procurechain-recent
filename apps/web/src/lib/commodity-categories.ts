@@ -13,23 +13,6 @@ export const CATEGORY_ORDER = [
   'Logistics & Freight',
 ];
 
-// Named for completeness/navigation only — we don't have a data source for
-// these yet, so they're shown as "not tracked" rather than given fabricated
-// prices. Real coverage would need a paid feed (LME, ICIS, etc.).
-// Nickel/Zinc/Iron Ore/Coal moved out of this list — now real via the World
-// Bank Pink Sheet (free, no key required).
-export const UNTRACKED_BY_CATEGORY: Record<string, string[]> = {
-  Metals: ['Steel', 'Manganese', 'Chrome', 'Cobalt', 'Palladium', 'Stainless Steel', 'Scrap Steel'],
-  'Fuel & Energy': ['Petrol / Gasoline', 'Diesel (South Africa)', 'Jet Fuel', 'LPG', 'Electricity', 'Fuel Oil', 'Marine / Bunker Fuel'],
-  Plastics: ['Polyethylene', 'HDPE', 'LDPE', 'LLDPE', 'Polypropylene', 'PVC', 'PET', 'Polystyrene', 'ABS', 'Polycarbonate', 'EVA', 'Synthetic Rubber'],
-  'Construction Materials': ['Cement', 'Glass'],
-  Chemicals: ['Caustic Soda', 'Sulphuric Acid', 'Hydrochloric Acid', 'Methanol', 'Ethanol', 'Ammonia', 'Solvents', 'Industrial Chemicals'],
-  Paper: ['Pulp', 'Kraft Paper', 'Printing Paper', 'Newsprint', 'Recovered Paper'],
-  Packaging: ['Containerboard', 'Cardboard', 'Cartonboard', 'Packaging Film', 'Aluminium Foil', 'Packaging Resin'],
-  Agriculture: ['Livestock', 'Dairy Inputs', 'Feed Commodities'],
-  'Logistics & Freight': ['China to Durban 20FT', 'China to Durban 40FT', 'China to Durban 40HC'],
-};
-
 // General, category-level context — not commodity-specific claims about
 // today's market, just standing domain knowledge about what tends to drive
 // this category's costs. Safe to state generically; never used to imply a

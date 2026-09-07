@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useCommodityList } from '@/hooks/useMarketIntelligence';
 import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
 import { ChangeBadge } from './ChangeBadge';
-import { CATEGORY_ORDER, UNTRACKED_BY_CATEGORY } from '@/lib/commodity-categories';
+import { CATEGORY_ORDER } from '@/lib/commodity-categories';
 import type { CommodityListEntry } from '@/types/market-data';
 
 function CategorySummary({ entries }: { entries: CommodityListEntry[] }) {
@@ -40,6 +40,10 @@ export function CommodityList() {
     return <p className="text-sm text-ink-muted">Commodity data is temporarily unavailable.</p>;
   }
 
+  if (data.length === 0) {
+    return <p className="text-sm text-ink-muted">No verified commodity data is available right now.</p>;
+  }
+
   const byCategory = new Map<string, CommodityListEntry[]>();
   for (const entry of data) {
     const list = byCategory.get(entry.category) ?? [];
@@ -48,7 +52,7 @@ export function CommodityList() {
   }
 
   const orderedCategories = [
-    ...CATEGORY_ORDER.filter((c) => byCategory.has(c) || (UNTRACKED_BY_CATEGORY[c]?.length ?? 0) > 0),
+    ...CATEGORY_ORDER.filter((category) => byCategory.has(category)),
     ...Array.from(byCategory.keys()).filter((c) => !CATEGORY_ORDER.includes(c)),
   ];
 
@@ -56,7 +60,6 @@ export function CommodityList() {
     <div className="flex flex-col gap-10">
       {orderedCategories.map((category) => {
         const entries = byCategory.get(category) ?? [];
-        const untracked = UNTRACKED_BY_CATEGORY[category] ?? [];
         return (
           <div key={category}>
             <div className="mb-3 flex items-center justify-between">
@@ -93,17 +96,6 @@ export function CommodityList() {
                   </Link>
                 );
               })}
-              {untracked.map((name) => (
-                <div
-                  key={name}
-                  className="card flex items-center justify-between p-5 text-sm text-ink-faint opacity-60"
-                >
-                  {name}
-                  <span className="rounded-full border border-border-subtle px-2 py-0.5 text-[10px] uppercase tracking-wide">
-                    Not tracked
-                  </span>
-                </div>
-              ))}
             </div>
           </div>
         );
