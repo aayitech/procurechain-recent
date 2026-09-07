@@ -19,11 +19,15 @@ export const CATEGORY_ORDER = [
 // Nickel/Zinc/Iron Ore/Coal moved out of this list — now real via the World
 // Bank Pink Sheet (free, no key required).
 export const UNTRACKED_BY_CATEGORY: Record<string, string[]> = {
-  Metals: ['Stainless Steel'],
-  'Fuel & Energy': ['Diesel', 'LPG'],
-  Plastics: ['LDPE', 'Polypropylene (PP)', 'PVC', 'PET'],
+  Metals: ['Steel', 'Manganese', 'Chrome', 'Cobalt', 'Palladium', 'Stainless Steel', 'Scrap Steel'],
+  'Fuel & Energy': ['Petrol / Gasoline', 'Diesel (South Africa)', 'Jet Fuel', 'LPG', 'Electricity', 'Fuel Oil', 'Marine / Bunker Fuel'],
+  Plastics: ['Polyethylene', 'HDPE', 'LDPE', 'LLDPE', 'Polypropylene', 'PVC', 'PET', 'Polystyrene', 'ABS', 'Polycarbonate', 'EVA', 'Synthetic Rubber'],
   'Construction Materials': ['Cement', 'Glass'],
-  Chemicals: ['Caustic Soda', 'Sulphur', 'Ammonia'],
+  Chemicals: ['Caustic Soda', 'Sulphuric Acid', 'Hydrochloric Acid', 'Methanol', 'Ethanol', 'Ammonia', 'Solvents', 'Industrial Chemicals'],
+  Paper: ['Pulp', 'Kraft Paper', 'Printing Paper', 'Newsprint', 'Recovered Paper'],
+  Packaging: ['Containerboard', 'Cardboard', 'Cartonboard', 'Packaging Film', 'Aluminium Foil', 'Packaging Resin'],
+  Agriculture: ['Livestock', 'Dairy Inputs', 'Feed Commodities'],
+  'Logistics & Freight': ['China to Durban 20FT', 'China to Durban 40FT', 'China to Durban 40HC'],
 };
 
 // General, category-level context — not commodity-specific claims about

@@ -40,15 +40,6 @@ export function CommodityList() {
     return <p className="text-sm text-ink-muted">Commodity data is temporarily unavailable.</p>;
   }
 
-  if (data.length === 0) {
-    return (
-      <p className="text-sm text-ink-muted">
-        No commodity prices cached yet. Set <code className="font-mono text-xs">ALPHA_VANTAGE_API_KEY</code> on
-        the API and wait for the next refresh cycle.
-      </p>
-    );
-  }
-
   const byCategory = new Map<string, CommodityListEntry[]>();
   for (const entry of data) {
     const list = byCategory.get(entry.category) ?? [];
@@ -57,7 +48,7 @@ export function CommodityList() {
   }
 
   const orderedCategories = [
-    ...CATEGORY_ORDER.filter((c) => byCategory.has(c)),
+    ...CATEGORY_ORDER.filter((c) => byCategory.has(c) || (UNTRACKED_BY_CATEGORY[c]?.length ?? 0) > 0),
     ...Array.from(byCategory.keys()).filter((c) => !CATEGORY_ORDER.includes(c)),
   ];
 
@@ -95,7 +86,10 @@ export function CommodityList() {
                       <ChangeBadge value={entry.change7d} label={entry.periodShortLabel} />
                       {entry.periodLongLabel && <ChangeBadge value={entry.change30d} label={entry.periodLongLabel} />}
                     </div>
-                    <p className="mt-2 truncate text-[11px] text-ink-faint">{entry.source}</p>
+                    <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-ink-faint">
+                      <span className="truncate">{entry.source}</span>
+                      {entry.sourceUrl && <span className="shrink-0 text-accent">View source</span>}
+                    </div>
                   </Link>
                 );
               })}

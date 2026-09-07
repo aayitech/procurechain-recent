@@ -222,7 +222,7 @@ export function CommodityDetailView({ symbol }: { symbol: string }) {
               <p className="text-xs text-ink-muted">{CATEGORY_CONTEXT[data.category]}</p>
             </div>
           )}
-          <KeyStatsPanel history={data.history} unit={data.unit} change7d={data.change7d} change30d={data.change30d} source={data.source} />
+          <KeyStatsPanel history={data.history} unit={data.unit} change7d={data.change7d} change30d={data.change30d} source={data.source} sourceUrl={data.sourceUrl} />
           <div className="card p-4">
             <RelatedCommodities currentSymbol={data.symbol} category={data.category} />
           </div>

@@ -7,12 +7,14 @@ export function KeyStatsPanel({
   change7d,
   change30d,
   source,
+  sourceUrl,
 }: {
   history: HistoryPoint[];
   unit: string;
   change7d: number | null;
   change30d: number | null;
   source: string;
+  sourceUrl?: string | null;
 }) {
   const prices = history.map((p) => p.price);
   const periodHigh = Math.max(...prices);
@@ -39,9 +41,19 @@ export function KeyStatsPanel({
           </div>
         ))}
       </dl>
-      <p className="mt-3 border-t border-border-subtle pt-2 text-[10px] text-ink-faint">
-        Volatility = standard deviation of period-over-period % change. Unit: {unit}. Source: {source}
-      </p>
+      <div className="mt-3 border-t border-border-subtle pt-2 text-[10px] text-ink-faint">
+        <p>Volatility = standard deviation of period-over-period % change. Unit: {unit}.</p>
+        <p className="mt-1">
+          Source:{' '}
+          {sourceUrl ? (
+            <a href={sourceUrl} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+              {source}
+            </a>
+          ) : (
+            source
+          )}
+        </p>
+      </div>
     </div>
   );
 }

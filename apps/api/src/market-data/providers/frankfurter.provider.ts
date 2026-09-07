@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { SOURCE_NAMES } from '../source-registry';
 
 const FRANKFURTER_BASE = 'https://api.frankfurter.dev/v1';
 const HISTORY_DAYS = 180;
@@ -62,7 +63,7 @@ export class FrankfurterProvider {
     return {
       baseCode: base,
       points,
-      source: 'frankfurter.dev (ECB reference rates)',
+      source: SOURCE_NAMES.frankfurter,
     };
   }
 }

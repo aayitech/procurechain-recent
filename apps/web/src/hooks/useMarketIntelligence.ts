@@ -5,8 +5,6 @@ import { apiClient } from '@/lib/api-client';
 import {
   fetchFallbackFxDetail,
   fetchFallbackFxList,
-  getSampleCommodityDetail,
-  getSampleCommodityList,
 } from '@/lib/market-fallback';
 import type { CommodityDetail, CommodityListEntry, FxDetail, FxListEntry } from '@/types/market-data';
 
@@ -16,9 +14,9 @@ export function useCommodityList() {
     queryFn: async () => {
       try {
         const list = await apiClient.get<CommodityListEntry[]>('/market-data/commodities');
-        return list.length > 0 ? list : getSampleCommodityList();
+        return list;
       } catch {
-        return getSampleCommodityList();
+        return [];
       }
     },
     refetchInterval: 5 * 60 * 1000,
@@ -32,9 +30,7 @@ export function useCommodityDetail(symbol: string) {
       try {
         return await apiClient.get<CommodityDetail>(`/market-data/commodities/${symbol}`);
       } catch {
-        const sample = getSampleCommodityDetail(symbol);
-        if (!sample) throw new Error(`No data for ${symbol}`);
-        return sample;
+        throw new Error(`No verified data for ${symbol}`);
       }
     },
     enabled: Boolean(symbol),

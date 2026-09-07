@@ -9,6 +9,7 @@ import { WorldBankProvider } from './providers/world-bank.provider';
 import { FredProvider } from './providers/fred.provider';
 import { ImfProvider } from './providers/imf.provider';
 import { computeChangeStats, toCsv, type IndicatorFrequency } from './market-data.utils';
+import { DATA_SOURCE_REGISTRY, sourceUrlFor, type DataSourceRegistryEntry } from './source-registry';
 
 const HISTORY_LOOKBACK_POINTS = 60;
 
@@ -36,6 +37,7 @@ export interface CommodityListEntry {
   periodLongLabel: string | null;
   frequency: IndicatorFrequency;
   source: string;
+  sourceUrl: string | null;
   sparkline: HistoryPoint[];
 }
 
@@ -53,6 +55,7 @@ export interface FxListEntry {
   periodShortLabel: string;
   periodLongLabel: string | null;
   source: string;
+  sourceUrl: string | null;
   sparkline: HistoryPoint[];
 }
 
@@ -133,19 +136,20 @@ export class MarketDataService {
 
         const record = await this.prisma.commodity.upsert({
           where: { symbol: series.symbol },
-          update: { name: series.name, unit: series.unit, category: series.category },
+          update: { name: series.name, unit: series.unit, category: series.category, frequency: 'monthly' },
           create: {
             symbol: series.symbol,
             name: series.name,
             unit: series.unit,
             category: series.category,
+            frequency: 'monthly',
           },
         });
 
         for (const point of series.points) {
           await this.prisma.commodityPrice.upsert({
             where: { commodityId_asOf: { commodityId: record.id, asOf: point.asOf } },
-            update: { price: point.price },
+            update: { price: point.price, source: series.source },
             create: {
               commodityId: record.id,
               price: point.price,
@@ -172,19 +176,20 @@ export class MarketDataService {
       for (const series of seriesList) {
         const record = await this.prisma.commodity.upsert({
           where: { symbol: series.symbol },
-          update: { name: series.name, unit: series.unit, category: series.category },
+          update: { name: series.name, unit: series.unit, category: series.category, frequency: 'monthly' },
           create: {
             symbol: series.symbol,
             name: series.name,
             unit: series.unit,
             category: series.category,
+            frequency: 'monthly',
           },
         });
 
         for (const point of series.points) {
           await this.prisma.commodityPrice.upsert({
             where: { commodityId_asOf: { commodityId: record.id, asOf: point.asOf } },
-            update: { price: point.price },
+            update: { price: point.price, source: series.source },
             create: {
               commodityId: record.id,
               price: point.price,
@@ -227,7 +232,7 @@ export class MarketDataService {
         for (const point of series.points) {
           await this.prisma.commodityPrice.upsert({
             where: { commodityId_asOf: { commodityId: record.id, asOf: point.asOf } },
-            update: { price: point.price },
+            update: { price: point.price, source: series.source },
             create: {
               commodityId: record.id,
               price: point.price,
@@ -265,7 +270,7 @@ export class MarketDataService {
         for (const point of series.points) {
           await this.prisma.commodityPrice.upsert({
             where: { commodityId_asOf: { commodityId: record.id, asOf: point.asOf } },
-            update: { price: point.price },
+            update: { price: point.price, source: series.source },
             create: {
               commodityId: record.id,
               price: point.price,
@@ -294,12 +299,24 @@ export class MarketDataService {
     const payload: DashboardPayload = {
       fx,
       commodities,
-      commodityDataAvailable: this.commodities.isConfigured(),
+      commodityDataAvailable: commodities.length > 0,
       generatedAt: new Date().toISOString(),
     };
 
     await this.redis.set(DASHBOARD_CACHE_KEY, JSON.stringify(payload), 'EX', DASHBOARD_CACHE_TTL_SECONDS);
     return payload;
+  }
+
+  listSources(): DataSourceRegistryEntry[] {
+    return DATA_SOURCE_REGISTRY.map((source) => {
+      if (source.sourceId === 'fred') {
+        return { ...source, status: this.fred.isConfigured() ? 'active' : 'configuration_required' };
+      }
+      if (source.sourceId === 'alpha-vantage') {
+        return { ...source, status: this.commodities.isConfigured() ? 'active' : 'configuration_required' };
+      }
+      return source;
+    });
   }
 
   async listCommodities(): Promise<CommodityListEntry[]> {
@@ -333,6 +350,7 @@ export class MarketDataService {
         periodLongLabel: stats.periodLongLabel,
         frequency,
         source: latest.source,
+        sourceUrl: sourceUrlFor(latest.source),
         sparkline: ascending
           .slice(-SPARKLINE_POINTS)
           .map((row) => ({ asOf: row.asOf.toISOString(), price: row.price })),
@@ -376,6 +394,7 @@ export class MarketDataService {
       periodLongLabel: stats.periodLongLabel,
       frequency,
       source: latest.source,
+      sourceUrl: sourceUrlFor(latest.source),
       sparkline: ascending
         .slice(-SPARKLINE_POINTS)
         .map((row) => ({ asOf: row.asOf.toISOString(), price: row.price })),
@@ -420,6 +439,7 @@ export class MarketDataService {
         periodShortLabel: stats.periodShortLabel,
         periodLongLabel: stats.periodLongLabel,
         source: latest.source,
+        sourceUrl: sourceUrlFor(latest.source),
         sparkline: ascending
           .slice(-SPARKLINE_POINTS)
           .map((row) => ({ asOf: row.asOf.toISOString(), price: row.rate })),
@@ -453,6 +473,7 @@ export class MarketDataService {
       periodShortLabel: stats.periodShortLabel,
       periodLongLabel: stats.periodLongLabel,
       source: latest.source,
+      sourceUrl: sourceUrlFor(latest.source),
       sparkline: ascending
         .slice(-SPARKLINE_POINTS)
         .map((row) => ({ asOf: row.asOf.toISOString(), price: row.rate })),

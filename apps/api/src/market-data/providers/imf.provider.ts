@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { SOURCE_NAMES } from '../source-registry';
 
 const IMF_BASE = 'https://www.imf.org/external/datamapper/api/v1';
 const MAX_HISTORY_POINTS = 20;
@@ -80,7 +81,7 @@ export class ImfProvider {
             unit: `% year-over-year (IMF WEO; ${currentYear} onward is IMF's own projection, not ours)`,
             category: 'Economic Indicators',
             points,
-            source: 'IMF World Economic Outlook (DataMapper API)',
+            source: SOURCE_NAMES.imf,
           });
         }
       } catch (error) {

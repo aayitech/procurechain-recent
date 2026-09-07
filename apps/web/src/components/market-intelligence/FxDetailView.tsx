@@ -151,7 +151,7 @@ export function FxDetailView({ code }: { code: string }) {
         <div className="flex flex-col gap-4">
           <AIMarketStory type="fx" symbol={data.quoteCode} />
           <WhatChangedPanel name={pair} category="currency exchange" change7d={data.change7d} periodLabel={data.periodShortLabel} />
-          <KeyStatsPanel history={data.history} unit={pair} change7d={data.change7d} change30d={data.change30d} source={data.source} />
+          <KeyStatsPanel history={data.history} unit={pair} change7d={data.change7d} change30d={data.change30d} source={data.source} sourceUrl={data.sourceUrl} />
           <PriceAlertCapture symbol={data.quoteCode} name={pair} currentPrice={data.latestRate} />
           <WatchlistSidebar currentId={data.quoteCode} />
         </div>

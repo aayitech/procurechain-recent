@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { SOURCE_NAMES } from '../source-registry';
 
 const FRED_URL = 'https://api.stlouisfed.org/fred/series/observations';
 const MAX_HISTORY_POINTS = 36;
@@ -75,7 +76,7 @@ export class FredProvider {
       unit: def.unit,
       category: def.category,
       points,
-      source: 'FRED (Federal Reserve Bank of St. Louis)',
+      source: SOURCE_NAMES.fred,
     };
   }
 

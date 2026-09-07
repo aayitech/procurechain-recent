@@ -20,6 +20,7 @@ export interface CommodityListEntry {
   periodLongLabel: string | null;
   frequency: 'daily' | 'monthly' | 'annual';
   source: string;
+  sourceUrl: string | null;
   sparkline: HistoryPoint[];
 }
 
@@ -37,6 +38,7 @@ export interface FxListEntry {
   periodShortLabel: string;
   periodLongLabel: string | null;
   source: string;
+  sourceUrl: string | null;
   sparkline: HistoryPoint[];
 }
 

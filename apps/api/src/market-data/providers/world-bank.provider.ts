@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as XLSX from 'xlsx';
+import { SOURCE_NAMES } from '../source-registry';
 
 const LISTING_PAGE_URL = 'https://www.worldbank.org/en/research/commodity-markets';
 const MAX_HISTORY_POINTS = 36;
@@ -8,15 +9,42 @@ const MAX_HISTORY_POINTS = 36;
 // as a direct Excel download whose URL rotates (contains a content hash),
 // so we scrape the current link off the listing page rather than hardcode it.
 export const WORLD_BANK_COMMODITIES = [
+  { column: 'Crude oil, average', symbol: 'CRUDE_AVG', name: 'Crude Oil (Average)', unit: 'USD/barrel', category: 'Fuel & Energy' },
+  { column: 'Crude oil, Brent', symbol: 'BRENT', name: 'Crude Oil (Brent)', unit: 'USD/barrel', category: 'Fuel & Energy' },
+  { column: 'Crude oil, Dubai', symbol: 'DUBAI_CRUDE', name: 'Crude Oil (Dubai)', unit: 'USD/barrel', category: 'Fuel & Energy' },
+  { column: 'Crude oil, WTI', symbol: 'WTI', name: 'Crude Oil (WTI)', unit: 'USD/barrel', category: 'Fuel & Energy' },
+  { column: 'Natural gas, US', symbol: 'NATURAL_GAS_US', name: 'Natural Gas (US)', unit: 'USD/MMBtu', category: 'Fuel & Energy' },
+  { column: 'Natural gas, Europe', symbol: 'NATURAL_GAS_EU', name: 'Natural Gas (Europe)', unit: 'USD/MMBtu', category: 'Fuel & Energy' },
+  { column: 'Liquefied natural gas, Japan', symbol: 'LNG_JAPAN', name: 'LNG (Japan)', unit: 'USD/MMBtu', category: 'Fuel & Energy' },
   { column: 'Maize', symbol: 'CORN', name: 'Corn (Maize)', unit: 'USD/tonne', category: 'Agriculture' },
   { column: 'Iron ore, cfr spot', symbol: 'IRON_ORE', name: 'Iron Ore', unit: 'USD/dmtu', category: 'Metals' },
   { column: 'Coal, Australian', symbol: 'COAL', name: 'Coal (Australian)', unit: 'USD/tonne', category: 'Fuel & Energy' },
+  { column: 'Coal, South African **', symbol: 'COAL_ZAF', name: 'Coal (South African)', unit: 'USD/tonne', category: 'Fuel & Energy' },
+  { column: 'Aluminum', symbol: 'ALUMINUM', name: 'Aluminium', unit: 'USD/tonne', category: 'Metals' },
+  { column: 'Copper', symbol: 'COPPER', name: 'Copper', unit: 'USD/tonne', category: 'Metals' },
+  { column: 'Lead', symbol: 'LEAD', name: 'Lead', unit: 'USD/tonne', category: 'Metals' },
+  { column: 'Tin', symbol: 'TIN', name: 'Tin', unit: 'USD/tonne', category: 'Metals' },
   { column: 'Zinc', symbol: 'ZINC', name: 'Zinc', unit: 'USD/tonne', category: 'Metals' },
   { column: 'Nickel', symbol: 'NICKEL', name: 'Nickel', unit: 'USD/tonne', category: 'Metals' },
+  { column: 'Platinum', symbol: 'PLATINUM', name: 'Platinum', unit: 'USD/troy oz', category: 'Metals' },
+  { column: 'Silver', symbol: 'SILVER', name: 'Silver', unit: 'USD/troy oz', category: 'Metals' },
+  { column: 'Phosphate rock', symbol: 'PHOSPHATE_ROCK', name: 'Phosphate Rock', unit: 'USD/tonne', category: 'Chemicals' },
+  { column: 'DAP', symbol: 'DAP', name: 'Diammonium Phosphate (DAP)', unit: 'USD/tonne', category: 'Chemicals' },
+  { column: 'TSP', symbol: 'TSP', name: 'Triple Superphosphate (TSP)', unit: 'USD/tonne', category: 'Chemicals' },
   { column: 'Urea  ', symbol: 'UREA', name: 'Urea (Fertilizer)', unit: 'USD/tonne', category: 'Chemicals' },
+  { column: 'Potassium chloride **', symbol: 'POTASH', name: 'Potassium Chloride (Potash)', unit: 'USD/tonne', category: 'Chemicals' },
+  { column: 'Cocoa', symbol: 'COCOA', name: 'Cocoa', unit: 'USD/kg', category: 'Agriculture' },
+  { column: 'Coffee, Arabica', symbol: 'COFFEE_ARABICA', name: 'Coffee (Arabica)', unit: 'USD/kg', category: 'Agriculture' },
+  { column: 'Coffee, Robusta', symbol: 'COFFEE_ROBUSTA', name: 'Coffee (Robusta)', unit: 'USD/kg', category: 'Agriculture' },
+  { column: 'Soybeans', symbol: 'SOYBEANS', name: 'Soybeans', unit: 'USD/tonne', category: 'Agriculture' },
+  { column: 'Soybean oil', symbol: 'SOYBEAN_OIL', name: 'Soybean Oil', unit: 'USD/tonne', category: 'Agriculture' },
+  { column: 'Sunflower oil', symbol: 'SUNFLOWER_OIL', name: 'Sunflower Oil', unit: 'USD/tonne', category: 'Agriculture' },
+  { column: 'Rice, Thai 5%  ', symbol: 'RICE', name: 'Rice (Thai 5%)', unit: 'USD/tonne', category: 'Agriculture' },
+  { column: 'Wheat, US SRW', symbol: 'WHEAT', name: 'Wheat (US SRW)', unit: 'USD/tonne', category: 'Agriculture' },
   { column: 'Cotton, A Index', symbol: 'COTTON', name: 'Cotton', unit: 'USD/kg', category: 'Agriculture' },
   { column: 'Sugar, world', symbol: 'SUGAR', name: 'Sugar', unit: 'USD/kg', category: 'Agriculture' },
   { column: 'Palm oil', symbol: 'PALM_OIL', name: 'Palm Oil', unit: 'USD/tonne', category: 'Agriculture' },
+  { column: 'Rubber, RSS3', symbol: 'RUBBER', name: 'Natural Rubber (RSS3)', unit: 'USD/kg', category: 'Agriculture' },
   { column: 'Gold', symbol: 'GOLD', name: 'Gold', unit: 'USD/troy oz', category: 'Metals' },
 ] as const;
 
@@ -104,7 +132,7 @@ export class WorldBankProvider {
         unit: def.unit,
         category: def.category,
         points: points.slice(-MAX_HISTORY_POINTS),
-        source: 'World Bank Commodity Markets (Pink Sheet)',
+        source: SOURCE_NAMES.worldBank,
       });
     }
 

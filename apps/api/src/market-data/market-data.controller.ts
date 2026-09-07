@@ -15,6 +15,11 @@ export class MarketDataController {
     return this.marketData.getDashboard();
   }
 
+  @Get('sources')
+  listSources() {
+    return this.marketData.listSources();
+  }
+
   @Get('commodities')
   listCommodities() {
     return this.marketData.listCommodities();
@@ -59,9 +64,10 @@ export class MarketDataController {
     if (user.role !== 'ADMIN') {
       throw new ForbiddenException('Only admins can trigger a manual market data refresh');
     }
+    await Promise.all([this.marketData.refreshFx(), this.marketData.refreshCommodities()]);
+    // Apply official/international sources after secondary feeds so matching
+    // observations keep the higher-priority attribution deterministically.
     await Promise.all([
-      this.marketData.refreshFx(),
-      this.marketData.refreshCommodities(),
       this.marketData.refreshWorldBankCommodities(),
       this.marketData.refreshFredIndicators(),
       this.marketData.refreshImfIndicators(),

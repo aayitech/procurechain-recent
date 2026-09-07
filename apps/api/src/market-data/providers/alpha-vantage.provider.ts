@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { SOURCE_NAMES } from '../source-registry';
 
 const ALPHA_VANTAGE_URL = 'https://www.alphavantage.co/query';
 
@@ -90,7 +91,7 @@ export class AlphaVantageProvider {
       unit: commodity.unit,
       category: commodity.category,
       points,
-      source: 'Alpha Vantage',
+      source: SOURCE_NAMES.alphaVantage,
     };
   }
 }
