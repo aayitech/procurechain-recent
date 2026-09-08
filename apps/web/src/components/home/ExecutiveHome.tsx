@@ -21,11 +21,13 @@ export function ExecutiveHome() {
   const user = useAuthStore((state) => state.user);
   const signals = useMemo<Signal[]>(() => {
     if (!data) return [];
+    const priorities = [...(user?.marketProfile?.commodities ?? []), ...(user?.marketProfile?.procurementCategories ?? []), ...(user?.country === 'South Africa' ? ['diesel', 'steel', 'polyethylene', 'usd/zar', 'freight'] : [])].map((item) => item.toLowerCase());
+    const relevance = (item: Signal) => priorities.some((priority) => `${item.label} ${item.category}`.toLowerCase().includes(priority)) ? 1 : 0;
     return [
-      ...data.commodities.map((item) => ({ id: item.symbol, label: item.name, value: item.latestPrice, unit: item.unit, change: item.change30d, history: item.sparkline, href: `/market-intelligence/commodity/${item.symbol}`, category: item.category })),
-      ...data.fx.map((item) => ({ id: item.quoteCode, label: `${item.baseCode}/${item.quoteCode}`, value: item.latestRate, unit: '', change: item.change30d, history: item.sparkline, href: `/market-intelligence/fx/${item.quoteCode}`, category: 'fx' })),
-    ].filter((item) => Number.isFinite(item.value)).sort((a, b) => Math.abs(b.change ?? 0) - Math.abs(a.change ?? 0));
-  }, [data]);
+      ...data.commodities.map((item) => ({ id: item.symbol, label: item.name, value: item.latestPrice, unit: item.unit, change: item.change30d, history: item.sparkline, href: `/market-intelligence?instrument=${encodeURIComponent(`commodity:${item.symbol}`)}`, category: item.category })),
+      ...data.fx.map((item) => ({ id: item.quoteCode, label: `${item.baseCode}/${item.quoteCode}`, value: item.latestRate, unit: '', change: item.change30d, history: item.sparkline, href: `/market-intelligence?instrument=${encodeURIComponent(`fx:${item.quoteCode}`)}`, category: 'fx' })),
+    ].filter((item) => Number.isFinite(item.value)).sort((a, b) => relevance(b) - relevance(a) || Math.abs(b.change ?? 0) - Math.abs(a.change ?? 0));
+  }, [data, user]);
   const categories = useMemo(() => {
     const counts = new Map<string, number>();
     signals.forEach((item) => counts.set(item.category, (counts.get(item.category) ?? 0) + 1));

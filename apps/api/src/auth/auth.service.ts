@@ -19,6 +19,16 @@ export interface AuthResult {
     industry: string | null;
     jobTitle: string | null;
     role: string;
+    marketProfile: {
+      regionCity: string | null;
+      currency: string | null;
+      procurementCategories: string[];
+      commodities: string[];
+      purchaseMix: string | null;
+      sourcingCountries: string[];
+      tradeLanes: string[];
+      procurementChallenges: string[];
+    } | null;
   };
 }
 
@@ -47,14 +57,27 @@ export class AuthService {
         industry: dto.industry,
         jobTitle: dto.jobTitle,
         provider: 'EMAIL',
+        marketProfile: {
+          create: {
+            regionCity: dto.regionCity,
+            currency: dto.currency,
+            procurementCategories: dto.procurementCategories ?? [],
+            commodities: dto.commodities ?? [],
+            purchaseMix: dto.purchaseMix,
+            sourcingCountries: dto.sourcingCountries ?? [],
+            tradeLanes: dto.tradeLanes ?? [],
+            procurementChallenges: dto.procurementChallenges ?? [],
+          },
+        },
       },
+      include: { marketProfile: true },
     });
 
     return this.buildAuthResult(user);
   }
 
   async login(dto: LoginDto): Promise<AuthResult> {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const user = await this.prisma.user.findUnique({ where: { email: dto.email }, include: { marketProfile: true } });
     if (!user || !user.passwordHash) {
       throw new UnauthorizedException('Invalid email or password');
     }
@@ -77,6 +100,7 @@ export class AuthService {
     industry: string | null;
     jobTitle: string | null;
     role: string;
+    marketProfile: AuthResult['user']['marketProfile'];
   }): AuthResult {
     const accessToken = this.jwt.sign({ sub: user.id, email: user.email, role: user.role });
     return {
@@ -91,6 +115,7 @@ export class AuthService {
         industry: user.industry,
         jobTitle: user.jobTitle,
         role: user.role,
+        marketProfile: user.marketProfile,
       },
     };
   }

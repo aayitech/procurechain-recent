@@ -8,6 +8,16 @@ export interface AuthUser {
   industry: string | null;
   jobTitle: string | null;
   role: string;
+  marketProfile: {
+    regionCity: string | null;
+    currency: string | null;
+    procurementCategories: string[];
+    commodities: string[];
+    purchaseMix: string | null;
+    sourcingCountries: string[];
+    tradeLanes: string[];
+    procurementChallenges: string[];
+  } | null;
 }
 
 export interface AuthResponse {
@@ -24,6 +34,14 @@ export interface RegisterInput {
   country?: string;
   industry?: string;
   jobTitle?: string;
+  regionCity?: string;
+  currency?: string;
+  procurementCategories?: string[];
+  commodities?: string[];
+  purchaseMix?: string;
+  sourcingCountries?: string[];
+  tradeLanes?: string[];
+  procurementChallenges?: string[];
 }
 
 export interface LoginInput {

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Bot, MessageSquare, Plus, Send, Sparkles, Trash2, User } from 'lucide-react';
 import { useAskAssistant } from '@/hooks/useAssistant';
 import { useTrackEngagement } from '@/hooks/useEngagement';
+import { useAuthStore } from '@/store/auth-store';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -25,7 +26,7 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-export function AssistantChat({ initialQuestion }: { initialQuestion?: string }) {
+export function AssistantChat({ initialQuestion, currentContext = {} }: { initialQuestion?: string; currentContext?: Record<string, unknown> }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const { mutate, isPending } = useAskAssistant();
@@ -33,6 +34,8 @@ export function AssistantChat({ initialQuestion }: { initialQuestion?: string })
   const askedInitial = useRef(false);
   const track = useTrackEngagement();
   const startedConversation = useRef(false);
+  const user = useAuthStore((state) => state.user);
+  const [conversationId, setConversationId] = useState<string>();
 
   function send(question: string) {
     const trimmed = question.trim();
@@ -47,9 +50,10 @@ export function AssistantChat({ initialQuestion }: { initialQuestion?: string })
     setInput('');
 
     mutate(
-      { question: trimmed },
+      { question: trimmed, conversationId, currentContext, profile: user ? { name: user.firstName, country: user.country, currency: user.marketProfile?.currency, industry: user.industry, role: user.jobTitle, company: user.company, procurementCategories: user.marketProfile?.procurementCategories, marketInterests: user.marketProfile?.commodities, sourcingCountries: user.marketProfile?.sourcingCountries, tradeLanes: user.marketProfile?.tradeLanes } : undefined },
       {
         onSuccess: (data) => {
+          setConversationId(data.conversationId);
           setMessages((prev) => [...prev, { role: 'assistant', content: data.answer, dataAsOf: data.dataAsOf }]);
         },
         onError: (error) => {
@@ -84,7 +88,7 @@ export function AssistantChat({ initialQuestion }: { initialQuestion?: string })
   return (
     <div className="grid min-h-[calc(100vh-4rem)] bg-slate-950 text-slate-100 lg:grid-cols-[230px_minmax(0,1fr)]">
       <aside className="hidden border-r border-slate-800 bg-slate-950/90 p-3 lg:flex lg:flex-col">
-        <button type="button" onClick={() => setMessages([])} className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold hover:bg-blue-500"><Plus className="h-4 w-4" /> New conversation</button>
+        <button type="button" onClick={() => { setMessages([]); setConversationId(undefined); startedConversation.current = false; }} className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold hover:bg-blue-500"><Plus className="h-4 w-4" /> New conversation</button>
         <p className="mb-2 mt-6 px-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Explore topics</p>
         <nav className="space-y-1">{TOPICS.map((topic) => <button key={topic} type="button" onClick={() => send(`What should a procurement team know about ${topic.toLowerCase()}?`)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-slate-400 hover:bg-slate-900 hover:text-slate-100"><MessageSquare className="h-3.5 w-3.5" />{topic}</button>)}</nav>
         <div className="mt-auto rounded-xl border border-slate-800 bg-slate-900/70 p-3"><p className="text-xs font-semibold">Grounded responses</p><p className="mt-1 text-[11px] leading-5 text-slate-500">Answers use the market information available to ProcureChain and include the data timestamp when returned.</p></div>
@@ -94,7 +98,7 @@ export function AssistantChat({ initialQuestion }: { initialQuestion?: string })
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         {messages.length === 0 && (
           <div className="mx-auto flex h-full max-w-4xl flex-col justify-center">
-            <div className="flex items-start gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-5"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600/20 text-blue-400"><Sparkles size={18} /></div><div><p className="font-semibold">Good morning. What would you like to understand?</p><p className="mt-1 text-sm leading-6 text-slate-400">Ask about a tracked commodity, exchange rate, recent movement, or procurement implication.</p></div></div>
+            <div className="flex items-start gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-5"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600/20 text-blue-400"><Sparkles size={18} /></div><div><p className="font-semibold">Good morning{user?.firstName ? `, ${user.firstName}` : ''}. What would you like to understand?</p><p className="mt-1 text-sm leading-6 text-slate-400">Ask about a tracked commodity, exchange rate, recent movement, freight availability, or procurement implication.</p>{(user?.country || user?.industry) && <p className="mt-2 text-xs text-blue-300">Context: {[user.country, user.industry, user.marketProfile?.currency].filter(Boolean).join(' · ')}</p>}</div></div>
             <p className="mb-3 mt-7 text-xs font-semibold uppercase tracking-wider text-slate-500">Try asking</p>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {EXAMPLE_PROMPTS.map((prompt) => (
@@ -130,7 +134,7 @@ export function AssistantChat({ initialQuestion }: { initialQuestion?: string })
                       : 'border border-slate-800 bg-slate-900 text-slate-200'
                 }`}
               >
-                {message.content}
+                {message.role === 'assistant' && !message.isError ? <StructuredAnswer content={message.content} /> : message.content}
                 {message.dataAsOf && (
                   <p className="mt-2 text-[10px] text-slate-500">Grounded in data as of {formatTime(message.dataAsOf)}</p>
                 )}
@@ -170,4 +174,14 @@ export function AssistantChat({ initialQuestion }: { initialQuestion?: string })
       </section>
     </div>
   );
+}
+
+function StructuredAnswer({ content }: { content: string }) {
+  const blocks = content.split(/\n{2,}/).filter(Boolean);
+  return <div className="space-y-3">{blocks.map((block, index) => {
+    const lines = block.split('\n').filter(Boolean);
+    if (lines[0]?.startsWith('### ')) return <section key={index}><h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-blue-300">{lines[0].slice(4)}</h3><p className="whitespace-pre-wrap">{lines.slice(1).join('\n')}</p></section>;
+    if (lines.every((line) => /^[-*] /.test(line))) return <ul key={index} className="space-y-1 pl-4">{lines.map((line) => <li key={line} className="list-disc">{line.slice(2)}</li>)}</ul>;
+    return <p key={index} className="whitespace-pre-wrap">{block}</p>;
+  })}</div>;
 }

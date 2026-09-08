@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsArray, IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class RegisterDto {
   @IsEmail()
@@ -30,4 +30,42 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   jobTitle?: string;
+
+  @IsOptional()
+  @IsString()
+  regionCity?: string;
+
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  procurementCategories?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  commodities?: string[];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  purchaseMix?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  sourcingCountries?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tradeLanes?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  procurementChallenges?: string[];
 }

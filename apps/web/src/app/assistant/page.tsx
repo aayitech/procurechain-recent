@@ -8,7 +8,7 @@ export const metadata = {
 export default function AssistantPage({
   searchParams,
 }: {
-  searchParams: { q?: string };
+  searchParams: { q?: string; instrument?: string; category?: string; country?: string };
 }) {
-  return <AssistantChat initialQuestion={searchParams.q} />;
+  return <AssistantChat initialQuestion={searchParams.q} currentContext={{ page: 'Ask the Market', instrument: searchParams.instrument, category: searchParams.category, country: searchParams.country }} />;
 }

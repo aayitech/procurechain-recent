@@ -17,7 +17,7 @@ export class AssistantController {
   @Post('ask')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   ask(@Body() dto: AskDto) {
-    return this.assistantService.ask(dto.question);
+    return this.assistantService.ask(dto);
   }
 
   @Get('market-story/:type/:symbol')

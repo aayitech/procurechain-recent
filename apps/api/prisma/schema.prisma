@@ -20,22 +20,264 @@ enum AuthProvider {
 }
 
 model User {
-  id           String       @id @default(cuid())
-  email        String       @unique
-  passwordHash String?
-  firstName    String?
-  lastName     String?
-  company      String?
-  country      String?
-  industry     String?
-  jobTitle     String?
-  role         UserRole     @default(USER)
-  provider     AuthProvider @default(EMAIL)
-  providerId   String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id            String             @id @default(cuid())
+  email         String             @unique
+  passwordHash  String?
+  firstName     String?
+  lastName      String?
+  company       String?
+  country       String?
+  industry      String?
+  jobTitle      String?
+  role          UserRole           @default(USER)
+  provider      AuthProvider       @default(EMAIL)
+  providerId    String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  marketProfile UserMarketProfile?
+  watchlist     WatchlistItem[]
+  conversations Conversation[]
 
   @@index([email])
+}
+
+model UserMarketProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  regionCity            String?
+  currency              String?
+  procurementCategories String[] @default([])
+  commodities           String[] @default([])
+  purchaseMix           String?
+  sourcingCountries     String[] @default([])
+  tradeLanes            String[] @default([])
+  procurementChallenges String[] @default([])
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model CountryConfiguration {
+  id                  String   @id @default(cuid())
+  code                String   @unique
+  name                String
+  currency            String
+  isPrimary           Boolean  @default(false)
+  priorityInstruments String[] @default([])
+  ports               String[] @default([])
+  tradeLanes          String[] @default([])
+  enabled             Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model IndustryConfiguration {
+  id                  String   @id @default(cuid())
+  slug                String   @unique
+  name                String
+  priorityInstruments String[] @default([])
+  priorityCategories  String[] @default([])
+  enabled             Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+enum InstrumentType {
+  COMMODITY
+  FX
+  FREIGHT
+  PORT
+  ECONOMIC
+  TRADE
+}
+
+enum DataStatus {
+  ACTIVE
+  DELAYED
+  UNAVAILABLE
+  CONFIGURATION_REQUIRED
+}
+
+model DataSource {
+  id                    String              @id
+  name                  String
+  domain                String
+  dataTypes             String[]            @default([])
+  country               String?
+  region                String?
+  apiAvailable          Boolean             @default(false)
+  apiEndpoint           String?
+  apiKeyRequired        Boolean             @default(false)
+  updateFrequency       String?
+  historicalData        Boolean             @default(false)
+  commercialUse         String?
+  redistributionAllowed String?
+  attributionRequired   Boolean             @default(true)
+  licence               String?
+  status                DataStatus          @default(UNAVAILABLE)
+  lastSuccessfulFetch   DateTime?
+  lastFailedFetch       DateTime?
+  lastDataTimestamp     DateTime?
+  instruments           MarketInstrument[]
+  observations          MarketObservation[]
+  news                  MarketNews[]
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+}
+
+model MarketInstrument {
+  id            String               @id @default(cuid())
+  symbol        String               @unique
+  name          String
+  type          InstrumentType
+  category      String
+  subCategory   String?
+  country       String?
+  region        String?
+  currency      String?
+  unit          String?
+  frequency     String?
+  sourceId      String?
+  source        DataSource?          @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  status        DataStatus           @default(UNAVAILABLE)
+  confidence    String?
+  sourceUrl     String?
+  observations  MarketObservation[]
+  watchlistedBy WatchlistItem[]
+  relatedNews   NewsInstrument[]
+  categoryLinks CategoryInstrument[]
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@index([type, category])
+  @@index([country, status])
+}
+
+model MarketObservation {
+  id              String           @id @default(cuid())
+  instrumentId    String
+  instrument      MarketInstrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  sourceId        String
+  source          DataSource       @relation(fields: [sourceId], references: [id])
+  value           Decimal          @db.Decimal(20, 8)
+  currency        String?
+  unit            String?
+  observedAt      DateTime
+  sourceTimestamp DateTime
+  fetchedAt       DateTime         @default(now())
+  status          DataStatus       @default(ACTIVE)
+  confidence      String?
+  metadata        Json?
+
+  @@unique([instrumentId, sourceId, observedAt])
+  @@index([instrumentId, observedAt])
+}
+
+model FreightRoute {
+  id              String     @id @default(cuid())
+  origin          String
+  destination     String
+  originPort      String?
+  destinationPort String?
+  containerType   String
+  currency        String?
+  status          DataStatus @default(UNAVAILABLE)
+  sourceId        String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@unique([origin, destination, destinationPort, containerType])
+}
+
+model Port {
+  id        String     @id @default(cuid())
+  code      String     @unique
+  name      String
+  country   String
+  region    String?
+  latitude  Float?
+  longitude Float?
+  status    DataStatus @default(UNAVAILABLE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model MarketNews {
+  id          String           @id @default(cuid())
+  headline    String
+  publisher   String
+  sourceUrl   String           @unique
+  publishedAt DateTime
+  country     String?
+  region      String?
+  industry    String?
+  categories  String[]         @default([])
+  summary     String?
+  imageUrl    String?
+  sourceType  String?
+  sourceId    String?
+  source      DataSource?      @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  instruments NewsInstrument[]
+  createdAt   DateTime         @default(now())
+
+  @@index([publishedAt])
+  @@index([country, industry])
+}
+
+model NewsInstrument {
+  newsId       String
+  instrumentId String
+  news         MarketNews       @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  instrument   MarketInstrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+
+  @@id([newsId, instrumentId])
+}
+
+model CategoryInstrument {
+  category     String
+  instrumentId String
+  role         String
+  weight       Decimal?         @db.Decimal(8, 4)
+  instrument   MarketInstrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+
+  @@id([category, instrumentId, role])
+}
+
+model WatchlistItem {
+  id           String           @id @default(cuid())
+  userId       String
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  instrumentId String
+  instrument   MarketInstrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  createdAt    DateTime         @default(now())
+
+  @@unique([userId, instrumentId])
+  @@index([userId])
+}
+
+model Conversation {
+  id        String                @id @default(cuid())
+  userId    String?
+  user      User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  title     String?
+  context   Json?
+  messages  ConversationMessage[]
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  @@index([userId, updatedAt])
+}
+
+model ConversationMessage {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String
+  content        String
+  dataAsOf       DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
 }
 
 enum LeadSource {
@@ -54,28 +296,28 @@ enum LeadStatus {
 }
 
 model Lead {
-  id                String     @id @default(cuid())
-  firstName         String
-  lastName          String?
-  email             String
-  company           String?
-  phone             String?
-  country           String?
-  industry          String?
-  role              String?
-  annualSpendBand   String?
-  categoriesOfInterest String[] @default([])
-  preferredLanguage String?    @default("en")
-  newsletterOptIn   Boolean    @default(true)
-  source            LeadSource
-  sourceDetail      String?
-  status            LeadStatus @default(NEW)
-  syncedAt          DateTime?
-  syncError         String?
-  createdAt         DateTime   @default(now())
-  customFields      Json?
+  id                    String                 @id @default(cuid())
+  firstName             String
+  lastName              String?
+  email                 String
+  company               String?
+  phone                 String?
+  country               String?
+  industry              String?
+  role                  String?
+  annualSpendBand       String?
+  categoriesOfInterest  String[]               @default([])
+  preferredLanguage     String?                @default("en")
+  newsletterOptIn       Boolean                @default(true)
+  source                LeadSource
+  sourceDetail          String?
+  status                LeadStatus             @default(NEW)
+  syncedAt              DateTime?
+  syncError             String?
+  createdAt             DateTime               @default(now())
+  customFields          Json?
   healthCheckSubmission HealthCheckSubmission?
-  engagementEvents  EngagementEvent[]
+  engagementEvents      EngagementEvent[]
 
   @@index([email])
   @@index([source])
@@ -124,38 +366,38 @@ model HealthCheckSubmission {
 }
 
 model Currency {
-  code   String @id
-  name   String
-  rates  ExchangeRate[]
+  code  String         @id
+  name  String
+  rates ExchangeRate[]
 }
 
 model ExchangeRate {
-  id         String   @id @default(cuid())
-  baseCode   String
-  quoteCode  String
-  rate       Float
-  asOf       DateTime
-  source     String
-  currency   Currency @relation(fields: [quoteCode], references: [code])
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  baseCode  String
+  quoteCode String
+  rate      Float
+  asOf      DateTime
+  source    String
+  currency  Currency @relation(fields: [quoteCode], references: [code])
+  createdAt DateTime @default(now())
 
   @@unique([baseCode, quoteCode, asOf])
   @@index([baseCode, quoteCode])
 }
 
 model Commodity {
-  id          String            @id @default(cuid())
-  symbol      String            @unique
-  name        String
-  unit        String
-  category    String
+  id        String           @id @default(cuid())
+  symbol    String           @unique
+  name      String
+  unit      String
+  category  String
   // Determines which comparison periods are meaningful — a 7-day change on
   // an annual indicator is not a real number, it's noise from date-window
   // arithmetic landing on the previous year's single data point.
-  frequency   String            @default("daily")
-  prices      CommodityPrice[]
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  frequency String           @default("daily")
+  prices    CommodityPrice[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 }
 
 model CommodityPrice {

@@ -6,10 +6,11 @@ This is a **standalone** platform — it does not depend on ProcureChain, but
 the schema and API boundaries are designed so it can be integrated later
 (shared auth model, clean lead-capture API, GoHighLevel-ready sync).
 
-## Status: Module 1 — Foundation + Homepage
+## Status: Integrated intelligence-platform foundation
 
-This is the first of many modules, built feature-by-feature per the project's
-development approach. What's real and working in this module:
+The repository now contains the integrated Homepage, Market Intelligence terminal,
+Market Brief, Ask the Market workspace, personalisation flow, and supporting API.
+See `IMPLEMENTATION_STATUS.md` for the requirement-by-requirement gap assessment.
 
 - Monorepo (pnpm workspaces): NestJS API + Next.js web app
 - Auth: email/password registration & login with JWT (Google/Microsoft/
@@ -28,11 +29,9 @@ development approach. What's real and working in this module:
   insights, newsletter signup, and book-a-demo form — all wired to the real
   API, not mocked.
 
-Header/footer navigation links to modules that don't exist yet (Market
-Intelligence, Categories, Calculators, Benchmarking, Knowledge Centre, AI
-Assistant's full experience, Admin Portal, etc.) — those routes will 404
-until their modules are built. The homepage's hero search links to a real
-`/assistant` waitlist page rather than faking an AI response.
+Market data is source-controlled. The terminal exposes the full configured market
+universe but explicitly marks instruments without an approved live observation as
+unavailable; it never generates substitute prices or history.
 
 ## Prerequisites
 
@@ -90,13 +89,10 @@ pnpm dev:web   # http://localhost:3000
   calls for these; they're deliberately omitted rather than invented, since
   fake customer quotes would be misleading. Add real ones as they exist.
 
-## Next modules (suggested order)
+## Next implementation priority
 
-1. Market Intelligence Centre (commodity/FX/shipping detail pages, charts,
-   forecasts)
-2. Category Management Centre
-3. Calculator Centre
-4. Benchmarking assessment
-5. AI Procurement Assistant (real LLM-backed answers)
-6. Knowledge Centre, Newsletter Centre
-7. Admin Portal
+1. Apply and seed the unified intelligence database migration.
+2. Connect official South African fuel, SARB, Stats SA, and EIA feeds.
+3. Connect a licensed container freight-rate provider.
+4. Add authenticated server-side watchlists and profile editing.
+5. Complete trade, port, packaging, plastics, chemicals, and agriculture connectors.

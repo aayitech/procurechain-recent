@@ -4,6 +4,8 @@ import { REDIS_CLIENT } from '../redis/redis.module';
 import { MarketDataService } from '../market-data/market-data.service';
 import { NewsService } from '../news/news.service';
 import { CloudflareAiProvider } from './cloudflare-ai.provider';
+import { PrismaService } from '../prisma/prisma.service';
+import { AskDto } from './dto/ask.dto';
 
 const SYSTEM_INSTRUCTION = `You are the ProcureChain AI Procurement Assistant, embedded in a procurement intelligence platform.
 
@@ -40,6 +42,7 @@ export interface AssistantAnswer {
   answer: string;
   dataAsOf: string | null;
   model: string;
+  conversationId: string;
 }
 
 export interface MarketStoryResult {
@@ -60,10 +63,11 @@ export class AssistantService {
     private readonly ai: CloudflareAiProvider,
     private readonly marketData: MarketDataService,
     private readonly news: NewsService,
+    private readonly prisma: PrismaService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {}
 
-  async ask(question: string): Promise<AssistantAnswer> {
+  async ask(dto: AskDto): Promise<AssistantAnswer> {
     if (!this.ai.isConfigured()) {
       throw new ServiceUnavailableException('AI Assistant is not configured (Cloudflare Workers AI credentials are missing)');
     }
@@ -85,7 +89,19 @@ export class AssistantService {
       this.logger.warn(`Could not load market data for assistant context: ${(error as Error).message}`);
     }
 
-    const userMessage = `Market data snapshot:\n${snapshotText}\n\nUser question: ${question}`;
+    let conversation = dto.conversationId
+      ? await this.prisma.conversation.findUnique({ where: { id: dto.conversationId }, include: { messages: { orderBy: { createdAt: 'desc' }, take: 12 } } })
+      : null;
+    if (!conversation) {
+      conversation = await this.prisma.conversation.create({ data: { title: dto.question.slice(0, 80), context: (dto.currentContext ?? {}) as object }, include: { messages: true } });
+    } else if (dto.currentContext) {
+      await this.prisma.conversation.update({ where: { id: conversation.id }, data: { context: dto.currentContext as object } });
+    }
+
+    const priorMessages = [...conversation.messages].reverse().map((message) => `${message.role}: ${message.content}`).join('\n');
+    const personalContext = JSON.stringify({ profile: dto.profile ?? {}, currentPage: dto.currentContext ?? conversation.context ?? {} }, null, 2);
+    const userMessage = `Market data snapshot:\n${snapshotText}\n\nPersonal and current-page context (use only when relevant):\n${personalContext}\n\nRecent conversation:\n${priorMessages || 'No prior messages.'}\n\nUser question: ${dto.question}`;
+    await this.prisma.conversationMessage.create({ data: { conversationId: conversation.id, role: 'user', content: dto.question } });
 
     let answer: string;
     try {
@@ -96,7 +112,8 @@ export class AssistantService {
       throw new ServiceUnavailableException(this.ai.publicConfigurationError(message));
     }
 
-    return { answer, dataAsOf, model: this.ai.modelName };
+    await this.prisma.conversationMessage.create({ data: { conversationId: conversation.id, role: 'assistant', content: answer, dataAsOf: dataAsOf ? new Date(dataAsOf) : null } });
+    return { answer, dataAsOf, model: this.ai.modelName, conversationId: conversation.id };
   }
 
   async getMarketStory(type: 'commodity' | 'fx', symbol: string): Promise<MarketStoryResult> {
