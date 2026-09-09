@@ -16,6 +16,7 @@ const FOOTER_COLUMNS = [
     links: [
       { label: 'Benchmarking', href: '/benchmarking' },
       { label: 'Procurement Indices', href: '/#dashboard' },
+      { label: 'Approved Data Sources', href: '/data-sources' },
     ],
   },
   {
@@ -32,7 +33,7 @@ const FOOTER_COLUMNS = [
     links: [
       { label: 'About', href: '/about' },
       { label: 'Contact', href: '/contact' },
-      { label: 'Book a Demo', href: '/#book-demo' },
+      { label: 'Book a Demo', href: '/book-demo' },
     ],
   },
   {

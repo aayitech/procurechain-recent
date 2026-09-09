@@ -94,5 +94,6 @@ export const SEARCH_INDEX: SearchEntry[] = [
   { label: 'How to Run an RFQ', href: '/knowledge-centre/how-to-run-an-rfq', group: 'Pages', description: 'Learning path' },
   { label: 'How to Compare Supplier Quotations', href: '/knowledge-centre/how-to-compare-supplier-quotations', group: 'Pages', description: 'Learning path' },
   { label: 'How to Calculate Total Cost of Ownership', href: '/knowledge-centre/how-to-calculate-total-cost-of-ownership', group: 'Pages', description: 'Learning path' },
-  { label: 'Book a Demo', href: '/#book-demo', group: 'Pages', description: 'Talk to the team' },
+  { label: 'Book a Demo', href: '/book-demo', group: 'Pages', description: 'Book directly with the team' },
+  { label: 'Approved Data Sources', href: '/data-sources', group: 'Pages', description: 'View the controlled source registry' },
 ];

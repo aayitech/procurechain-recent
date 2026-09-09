@@ -7,6 +7,7 @@ import { useMarketDashboard } from '@/hooks/useMarketDashboard';
 import { useNews } from '@/hooks/useNews';
 import { useAuthStore } from '@/store/auth-store';
 import { Sparkline } from '@/components/shared/Sparkline';
+import { DemoCTA } from './DemoCTA';
 
 type Signal = { id: string; label: string; value: number; unit: string; change: number | null; history: Array<{ asOf: string; price: number }>; href: string; category: string };
 const categoryMeta: Record<string, { label: string; icon: typeof Droplets }> = {
@@ -60,5 +61,6 @@ export function ExecutiveHome() {
       <section className="rounded-2xl border border-blue-500/30 bg-gradient-to-r from-blue-950/80 via-slate-900 to-slate-900 p-5 sm:p-7"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center"><div className="flex gap-4"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600"><Bot className="h-6 w-6" /></div><div><h2 className="text-lg font-semibold">Ask the Market</h2><p className="mt-1 text-sm text-slate-400">Explore procurement implications using the market data available in ProcureChain.</p></div></div><Link href="/assistant" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold hover:bg-blue-500">Open assistant <ArrowRight className="h-4 w-4" /></Link></div></section>
       {categories.length > 0 && <section><div className="mb-4"><p className="text-xs font-semibold uppercase tracking-wider text-blue-400">Explore by category</p><h2 className="mt-1 text-xl font-semibold">Available market coverage</h2></div><div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">{categories.map(({ key, label, count, icon: Icon }) => <Link key={key} href="/market-intelligence" className="rounded-xl border border-slate-800 bg-slate-900/65 p-4 text-center transition hover:border-blue-500/60"><Icon className="mx-auto h-6 w-6 text-blue-400" /><p className="mt-3 text-sm font-semibold capitalize">{label}</p><p className="mt-1 text-xs text-slate-500">{count} live {count === 1 ? 'instrument' : 'instruments'}</p></Link>)}</div></section>}
     </div>
+    <DemoCTA />
   </main>;
 }

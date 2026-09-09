@@ -19,7 +19,7 @@ export function TransformCTA() {
             <ArrowRight size={15} />
           </Link>
           <a
-            href="#book-demo"
+            href="/book-demo"
             className="rounded-lg border border-border px-6 py-3 text-sm font-medium text-ink-muted transition-colors hover:border-accent hover:text-ink"
           >
             Book a Demo

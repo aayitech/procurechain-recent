@@ -51,7 +51,7 @@ const SIMPLE_LINKS = [
   { label: 'Calculators', href: '/calculators' },
   { label: 'Benchmarking', href: '/benchmarking' },
   { label: 'Knowledge Centre', href: '/knowledge-centre' },
-  { label: 'Book a Demo', href: '/#book-demo' },
+  { label: 'Book a Demo', href: '/book-demo' },
 ];
 
 const MOBILE_LINKS = [
@@ -62,7 +62,7 @@ const MOBILE_LINKS = [
   { label: 'Calculators', href: '/calculators' },
   { label: 'Benchmarking', href: '/benchmarking' },
   { label: 'Knowledge Centre', href: '/knowledge-centre' },
-  { label: 'Book a Demo', href: '/#book-demo' },
+  { label: 'Book a Demo', href: '/book-demo' },
 ];
 
 export function Header() {

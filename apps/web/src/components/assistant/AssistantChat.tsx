@@ -1,10 +1,11 @@
 'use client';
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { Bot, MessageSquare, Plus, Send, Sparkles, Trash2, User } from 'lucide-react';
+import { Bot, CalendarDays, MessageSquare, Plus, Send, Sparkles, Trash2, User } from 'lucide-react';
 import { useAskAssistant } from '@/hooks/useAssistant';
 import { useTrackEngagement } from '@/hooks/useEngagement';
 import { useAuthStore } from '@/store/auth-store';
+import { GhlDemoDialog } from '@/components/leads/GhlDemoDialog';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -36,6 +37,7 @@ export function AssistantChat({ initialQuestion, currentContext = {} }: { initia
   const startedConversation = useRef(false);
   const user = useAuthStore((state) => state.user);
   const [conversationId, setConversationId] = useState<string>();
+  const [demoOpen, setDemoOpen] = useState(false);
 
   function send(question: string) {
     const trimmed = question.trim();
@@ -91,10 +93,10 @@ export function AssistantChat({ initialQuestion, currentContext = {} }: { initia
         <button type="button" onClick={() => { setMessages([]); setConversationId(undefined); startedConversation.current = false; }} className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold hover:bg-blue-500"><Plus className="h-4 w-4" /> New conversation</button>
         <p className="mb-2 mt-6 px-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Explore topics</p>
         <nav className="space-y-1">{TOPICS.map((topic) => <button key={topic} type="button" onClick={() => send(`What should a procurement team know about ${topic.toLowerCase()}?`)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-slate-400 hover:bg-slate-900 hover:text-slate-100"><MessageSquare className="h-3.5 w-3.5" />{topic}</button>)}</nav>
-        <div className="mt-auto rounded-xl border border-slate-800 bg-slate-900/70 p-3"><p className="text-xs font-semibold">Grounded responses</p><p className="mt-1 text-[11px] leading-5 text-slate-500">Answers use the market information available to ProcureChain and include the data timestamp when returned.</p></div>
+        <div className="mt-auto space-y-3"><button type="button" onClick={() => setDemoOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-xs font-semibold text-white hover:bg-blue-500"><CalendarDays className="h-4 w-4" /> Book a demo</button><div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3"><p className="text-xs font-semibold">Grounded responses</p><p className="mt-1 text-[11px] leading-5 text-slate-500">Answers use the market information available to ProcureChain and include the data timestamp when returned.</p></div></div>
       </aside>
       <section className="flex min-h-0 flex-col">
-        <header className="flex items-center justify-between border-b border-slate-800 bg-slate-900/50 px-4 py-4 sm:px-6"><div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600"><Bot className="h-5 w-5" /></div><div><h1 className="font-semibold">Ask the Market</h1><p className="text-xs text-slate-500">AI procurement intelligence assistant</p></div></div>{messages.length > 0 && <button type="button" onClick={() => setMessages([])} className="flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-400 hover:text-white"><Trash2 className="h-3.5 w-3.5" /> Clear</button>}</header>
+        <header className="flex items-center justify-between border-b border-slate-800 bg-slate-900/50 px-4 py-4 sm:px-6"><div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600"><Bot className="h-5 w-5" /></div><div><h1 className="font-semibold">Ask the Market</h1><p className="text-xs text-slate-500">AI procurement intelligence assistant</p></div></div><div className="flex items-center gap-2"><button type="button" onClick={() => setDemoOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-500"><CalendarDays className="h-3.5 w-3.5" /><span className="hidden sm:inline">Book a demo</span></button>{messages.length > 0 && <button type="button" onClick={() => setMessages([])} className="flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-400 hover:text-white"><Trash2 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Clear</span></button>}</div></header>
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         {messages.length === 0 && (
           <div className="mx-auto flex h-full max-w-4xl flex-col justify-center">
@@ -172,6 +174,7 @@ export function AssistantChat({ initialQuestion, currentContext = {} }: { initia
         procurement advice; verify before acting.
       </p></div>
       </section>
+      <GhlDemoDialog open={demoOpen} onClose={() => setDemoOpen(false)} />
     </div>
   );
 }
