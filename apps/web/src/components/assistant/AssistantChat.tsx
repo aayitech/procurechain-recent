@@ -183,8 +183,20 @@ function StructuredAnswer({ content }: { content: string }) {
   const blocks = content.split(/\n{2,}/).filter(Boolean);
   return <div className="space-y-3">{blocks.map((block, index) => {
     const lines = block.split('\n').filter(Boolean);
-    if (lines[0]?.startsWith('### ')) return <section key={index}><h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-blue-300">{lines[0].slice(4)}</h3><p className="whitespace-pre-wrap">{lines.slice(1).join('\n')}</p></section>;
-    if (lines.every((line) => /^[-*] /.test(line))) return <ul key={index} className="space-y-1 pl-4">{lines.map((line) => <li key={line} className="list-disc">{line.slice(2)}</li>)}</ul>;
+    if (lines[0]?.startsWith('### ')) return <section key={index} className="rounded-xl border border-slate-700/80 bg-slate-950/45 p-3"><h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-300">{lines[0].slice(4)}</h3><AnswerLines lines={lines.slice(1)} /></section>;
+    if (lines.every((line) => /^[-*] /.test(line))) return <ul key={index} className="grid gap-2 sm:grid-cols-2">{lines.map((line, lineIndex) => <li key={`${line}-${lineIndex}`} className="rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-xs leading-5">{line.slice(2)}</li>)}</ul>;
     return <p key={index} className="whitespace-pre-wrap">{block}</p>;
+  })}</div>;
+}
+
+function AnswerLines({ lines }: { lines: string[] }) {
+  if (lines.length === 0) return null;
+  if (lines.every((line) => /^[-*] /.test(line))) {
+    return <ul className="grid gap-2 sm:grid-cols-2">{lines.map((line, index) => <li key={`${line}-${index}`} className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-xs leading-5">{line.slice(2)}</li>)}</ul>;
+  }
+  return <div className="space-y-1.5">{lines.map((line, index) => {
+    const separator = line.indexOf(':');
+    if (separator > 0 && separator < 40) return <div key={`${line}-${index}`} className="flex flex-col justify-between gap-1 border-b border-slate-800/70 py-1.5 last:border-0 sm:flex-row"><span className="text-xs text-slate-500">{line.slice(0, separator)}</span><span className="text-sm text-slate-200">{line.slice(separator + 1).trim()}</span></div>;
+    return <p key={`${line}-${index}`} className="whitespace-pre-wrap">{line}</p>;
   })}</div>;
 }

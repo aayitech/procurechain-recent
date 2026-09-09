@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, MessageSquare, Search, Star, TrendingDown, TrendingUp } from 'lucide-react';
+import { CheckCircle2, ExternalLink, MessageSquare, Search, Star, TrendingDown, TrendingUp } from 'lucide-react';
 import { useCommodityDetail, useCommodityList, useFxDetail, useFxList } from '@/hooks/useMarketIntelligence';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { AdvancedPriceChart } from './AdvancedPriceChart';
@@ -16,7 +16,7 @@ type TerminalInstrument = {
   value: number | null; currency: string; unit: string; changeShort: number | null;
   changeLong: number | null; shortLabel: string; longLabel: string | null;
   asOf: string | null; source: string | null; sourceUrl: string | null;
-  sparkline: HistoryPoint[]; live: boolean;
+  sparkline: HistoryPoint[];
 };
 
 const categoryAliases: Record<string, string> = {
@@ -28,11 +28,11 @@ const normalizeCategory = (value: string) => categoryAliases[value.toLowerCase()
 
 function fromCommodity(item: CommodityListEntry): TerminalInstrument {
   const catalog = universeMatch('commodity', item.symbol, item.name);
-  return { key: `commodity:${item.symbol}`, id: item.symbol, kind: 'commodity', name: catalog?.name ?? item.name, category: catalog?.category ?? normalizeCategory(item.category), value: item.latestPrice, currency: item.currency, unit: item.unit, changeShort: item.change7d, changeLong: item.change30d, shortLabel: item.periodShortLabel, longLabel: item.periodLongLabel, asOf: item.asOf, source: item.source, sourceUrl: item.sourceUrl, sparkline: item.sparkline, live: true };
+  return { key: `commodity:${item.symbol}`, id: item.symbol, kind: 'commodity', name: catalog?.name ?? item.name, category: catalog?.category ?? normalizeCategory(item.category), value: item.latestPrice, currency: item.currency, unit: item.unit, changeShort: item.change7d, changeLong: item.change30d, shortLabel: item.periodShortLabel, longLabel: item.periodLongLabel, asOf: item.asOf, source: item.source, sourceUrl: item.sourceUrl, sparkline: item.sparkline };
 }
 
 function fromFx(item: FxListEntry): TerminalInstrument {
-  return { key: `fx:${item.baseCode}:${item.quoteCode}`, id: `${item.baseCode}-${item.quoteCode}`, kind: 'fx', name: `${item.baseCode}/${item.quoteCode}`, category: 'FX & Currencies', value: item.latestRate, currency: item.quoteCode, unit: `1 ${item.baseCode}`, changeShort: item.change7d, changeLong: item.change30d, shortLabel: item.periodShortLabel, longLabel: item.periodLongLabel, asOf: item.asOf, source: item.source, sourceUrl: item.sourceUrl, sparkline: item.sparkline, live: true };
+  return { key: `fx:${item.baseCode}:${item.quoteCode}`, id: `${item.baseCode}-${item.quoteCode}`, kind: 'fx', name: `${item.baseCode}/${item.quoteCode}`, category: 'FX & Currencies', value: item.latestRate, currency: item.quoteCode, unit: `1 ${item.baseCode}`, changeShort: item.change7d, changeLong: item.change30d, shortLabel: item.periodShortLabel, longLabel: item.periodLongLabel, asOf: item.asOf, source: item.source, sourceUrl: item.sourceUrl, sparkline: item.sparkline };
 }
 
 const pct = (value: number | null) => value === null ? '—' : `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
@@ -44,7 +44,6 @@ function Movement({ value }: { value: number | null }) {
 }
 
 function movementImpact(item: TerminalInstrument) {
-  if (!item.live) return 'Unavailable';
   const movement = Math.max(Math.abs(item.changeShort ?? 0), Math.abs(item.changeLong ?? 0));
   return movement >= 3 ? 'High' : movement >= 1 ? 'Medium' : 'Low';
 }
@@ -68,10 +67,18 @@ export function MarketTerminal() {
     return MARKET_CATEGORIES.filter((item) => item === 'All' || present.has(item));
   }, [instruments]);
 
+  const activeSources = useMemo(() => {
+    const sources = new Map<string, string | null>();
+    instruments.forEach((item) => {
+      if (item.source) sources.set(item.source, item.sourceUrl);
+    });
+    return Array.from(sources.entries()).map(([name, url]) => ({ name, url }));
+  }, [instruments]);
+
   useEffect(() => {
     if (selectedKey || instruments.length === 0) return;
     const requested = searchParams.get('instrument');
-    const preferred = instruments.find((item) => item.key === requested) ?? instruments.find((item) => item.name === 'Diesel (South Africa)' && item.live) ?? instruments.find((item) => item.id === 'BRENT' && item.live) ?? instruments.find((item) => item.live) ?? instruments[0];
+    const preferred = instruments.find((item) => item.key === requested) ?? instruments.find((item) => item.name === 'Diesel (South Africa)') ?? instruments.find((item) => item.id === 'BRENT') ?? instruments[0];
     setSelectedKey(preferred.key);
   }, [instruments, searchParams, selectedKey]);
 
@@ -80,8 +87,8 @@ export function MarketTerminal() {
     const needle = query.trim().toLowerCase();
     return instruments.filter((item) => (category === 'All' || item.category === category) && (!needle || `${item.name} ${item.category} ${item.kind}`.toLowerCase().includes(needle))).sort((a, b) => sort === 'name' ? a.name.localeCompare(b.name) : sort === 'movement' ? Math.abs(b.changeShort ?? -1) - Math.abs(a.changeShort ?? -1) : Number(isWatched(b.key)) - Number(isWatched(a.key)) || a.name.localeCompare(b.name));
   }, [category, instruments, isWatched, query, sort]);
-  const { data: commodityDetail } = useCommodityDetail(selected?.live && selected.kind === 'commodity' ? selected.id : '');
-  const { data: fxDetail } = useFxDetail(selected?.live && selected.kind === 'fx' ? selected.id : '');
+  const { data: commodityDetail } = useCommodityDetail(selected?.kind === 'commodity' ? selected.id : '');
+  const { data: fxDetail } = useFxDetail(selected?.kind === 'fx' ? selected.id : '');
   const history = selected?.kind === 'commodity' ? commodityDetail?.history : selected?.kind === 'fx' ? fxDetail?.history : undefined;
   const context = selected ? CATEGORY_CONTEXT[selected.category] ?? (selected.kind === 'fx' ? 'Currency movement can change the local cost of imported goods and foreign-currency contracts.' : 'This market can influence input cost, landed cost, supplier pricing, or contract timing when verified data is available.') : '';
 
@@ -105,11 +112,12 @@ export function MarketTerminal() {
       </section>
       <section className="card overflow-hidden"><div className="flex flex-col gap-3 border-b border-border-subtle p-4 lg:flex-row lg:items-center lg:justify-between"><div><h2 className="font-semibold text-ink">Market instruments</h2><p className="text-xs text-ink-faint">Search available verified markets; select any row without leaving the terminal.</p></div><div className="flex flex-wrap gap-2"><label className="flex min-w-52 items-center gap-2 rounded-lg border border-border bg-canvas px-3 py-2"><Search size={14} className="text-ink-faint" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search available commodities and FX…" className="min-w-0 flex-1 bg-transparent text-xs text-ink outline-none" /></label><select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)} className="rounded-lg border border-border bg-canvas px-3 py-2 text-xs text-ink"><option value="priority">Priority</option><option value="movement">Largest movement</option><option value="name">Name</option></select></div></div>
         <div className="max-h-[560px] overflow-y-auto md:hidden">
-          {filtered.map((item) => <button key={item.key} type="button" onClick={() => selectInstrument(item.key)} className={`flex w-full items-center justify-between gap-4 border-t border-border-subtle p-4 text-left ${selected.key === item.key ? 'bg-accent/10' : 'hover:bg-canvas-overlay'}`}><span className="min-w-0"><span className="block truncate text-sm font-medium text-ink">{item.name}</span><span className="mt-1 block text-[11px] text-ink-faint">{item.category}</span></span><span className="shrink-0 text-right">{item.live && item.value !== null ? <><span className="block font-mono text-xs text-ink">{item.value.toLocaleString(undefined, { maximumFractionDigits: 4 })} {item.currency}</span><span className="mt-1 block"><Movement value={item.changeShort} /></span></> : <><span className="block text-xs font-medium text-warning">Awaiting source</span><span className="mt-1 block text-[10px] text-ink-faint">Open for details</span></>}</span></button>)}
+          {filtered.map((item) => <button key={item.key} type="button" onClick={() => selectInstrument(item.key)} className={`flex w-full items-center justify-between gap-4 border-t border-border-subtle p-4 text-left ${selected.key === item.key ? 'bg-accent/10' : 'hover:bg-canvas-overlay'}`}><span className="min-w-0"><span className="block truncate text-sm font-medium text-ink">{item.name}</span><span className="mt-1 block text-[11px] text-ink-faint">{item.category}</span></span><span className="shrink-0 text-right"><span className="block font-mono text-xs text-ink">{item.value?.toLocaleString(undefined, { maximumFractionDigits: 4 })} {item.currency}</span><span className="mt-1 block"><Movement value={item.changeShort} /></span></span></button>)}
           {filtered.length === 0 && <p className="p-8 text-center text-sm text-ink-muted">No instruments match these filters.</p>}
         </div>
-        <div className="hidden max-h-[560px] overflow-auto md:block"><table className="w-full min-w-[900px] text-left text-xs"><thead className="sticky top-0 bg-canvas-overlay text-ink-faint"><tr><th className="px-4 py-3">Watch</th><th className="px-4 py-3">Instrument</th><th className="px-4 py-3">Category</th><th className="px-4 py-3">Current</th><th className="px-4 py-3">7D / short</th><th className="px-4 py-3">30D / long</th><th className="px-4 py-3">Impact</th><th className="px-4 py-3">Status</th></tr></thead><tbody>{filtered.map((item) => <tr key={item.key} onClick={() => selectInstrument(item.key)} className={`cursor-pointer border-t border-border-subtle transition-colors hover:bg-canvas-overlay ${selected.key === item.key ? 'bg-accent/10' : ''}`}><td className="px-4 py-3"><button type="button" onClick={(event) => { event.stopPropagation(); toggle(item.key); }} aria-label={`Toggle ${item.name} watchlist`}><Star size={14} className={isWatched(item.key) ? 'fill-warning text-warning' : 'text-ink-faint'} /></button></td><td className="px-4 py-3 font-medium text-ink">{item.name}</td><td className="px-4 py-3 text-ink-muted">{item.category}</td><td className="px-4 py-3 font-mono text-ink">{item.value === null ? '—' : `${item.value.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${item.currency}`}</td><td className="px-4 py-3"><Movement value={item.changeShort} /></td><td className="px-4 py-3"><Movement value={item.changeLong} /></td><td className="px-4 py-3 text-ink-muted">{item.live ? movementImpact(item) : '—'}</td><td className={`px-4 py-3 ${item.live ? 'text-positive' : 'text-warning'}`}>{item.live ? 'Live' : 'Awaiting source'}</td></tr>)}</tbody></table>{filtered.length === 0 && <p className="p-8 text-center text-sm text-ink-muted">No instruments match these filters.</p>}</div>
+        <div className="hidden max-h-[560px] overflow-auto md:block"><table className="w-full min-w-[900px] text-left text-xs"><thead className="sticky top-0 bg-canvas-overlay text-ink-faint"><tr><th className="px-4 py-3">Watch</th><th className="px-4 py-3">Instrument</th><th className="px-4 py-3">Category</th><th className="px-4 py-3">Current</th><th className="px-4 py-3">7D / short</th><th className="px-4 py-3">30D / long</th><th className="px-4 py-3">Impact</th><th className="px-4 py-3">Data period</th></tr></thead><tbody>{filtered.map((item) => <tr key={item.key} onClick={() => selectInstrument(item.key)} className={`cursor-pointer border-t border-border-subtle transition-colors hover:bg-canvas-overlay ${selected.key === item.key ? 'bg-accent/10' : ''}`}><td className="px-4 py-3"><button type="button" onClick={(event) => { event.stopPropagation(); toggle(item.key); }} aria-label={`Toggle ${item.name} watchlist`}><Star size={14} className={isWatched(item.key) ? 'fill-warning text-warning' : 'text-ink-faint'} /></button></td><td className="px-4 py-3 font-medium text-ink">{item.name}</td><td className="px-4 py-3 text-ink-muted">{item.category}</td><td className="px-4 py-3 font-mono text-ink">{item.value === null ? '—' : `${item.value.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${item.currency}`}</td><td className="px-4 py-3"><Movement value={item.changeShort} /></td><td className="px-4 py-3"><Movement value={item.changeLong} /></td><td className="px-4 py-3 text-ink-muted">{movementImpact(item)}</td><td className="px-4 py-3 text-ink-faint">{item.asOf ? new Date(item.asOf).toLocaleDateString('en-ZA', { dateStyle: 'medium' }) : '—'}</td></tr>)}</tbody></table>{filtered.length === 0 && <p className="p-8 text-center text-sm text-ink-muted">No instruments match these filters.</p>}</div>
       </section>
+      {activeSources.length > 0 && <section className="card p-5"><div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end"><div><p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Active data sources</p><h2 className="mt-1 text-lg font-semibold text-ink">Verified coverage in this terminal</h2></div><Link href="/data-sources" className="text-xs font-medium text-accent hover:text-accent-hover">View source registry</Link></div><div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{activeSources.map((source) => source.url ? <a key={source.name} href={source.url} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-3 rounded-lg border border-border-subtle bg-canvas px-3 py-3 text-xs text-ink-muted hover:border-accent/50 hover:text-ink"><span className="truncate">{source.name}</span><ExternalLink className="h-3.5 w-3.5 shrink-0 text-accent" /></a> : <div key={source.name} className="rounded-lg border border-border-subtle bg-canvas px-3 py-3 text-xs text-ink-muted">{source.name}</div>)}</div></section>}
     </main>
   </div>;
 }

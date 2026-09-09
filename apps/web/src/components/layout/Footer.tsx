@@ -5,51 +5,34 @@ const FOOTER_COLUMNS = [
   {
     title: 'Platform',
     links: [
+      { label: 'Personalised Overview', href: '/#dashboard' },
       { label: 'Market Intelligence', href: '/market-intelligence' },
-      { label: 'Categories', href: '/#categories' },
+      { label: 'Market Brief', href: '/market-brief' },
       { label: 'AI Assistant', href: '/assistant' },
-      { label: 'Calculators', href: '/calculators' },
     ],
   },
   {
-    title: 'Solutions',
+    title: 'Decision Tools',
     links: [
+      { label: 'Calculators', href: '/calculators' },
       { label: 'Benchmarking', href: '/benchmarking' },
-      { label: 'Procurement Indices', href: '/#dashboard' },
-      { label: 'Approved Data Sources', href: '/data-sources' },
+      { label: 'Procurement Health', href: '/health-check' },
     ],
   },
   {
-    title: 'Resources',
+    title: 'Intelligence',
     links: [
       { label: 'Knowledge Centre', href: '/knowledge-centre' },
-      { label: 'Newsletters', href: '/#newsletter' },
-      { label: 'Procurement Academy', href: '/academy' },
-      { label: 'Procurement News', href: '/market-intelligence' },
+      { label: 'Approved Data Sources', href: '/data-sources' },
+      { label: 'Live Market Coverage', href: '/market-intelligence' },
     ],
   },
   {
-    title: 'Company',
+    title: 'Get Started',
     links: [
-      { label: 'About', href: '/about' },
-      { label: 'Contact', href: '/contact' },
       { label: 'Book a Demo', href: '/book-demo' },
-    ],
-  },
-  {
-    title: 'Support',
-    links: [
-      { label: 'Help Centre', href: '/help' },
       { label: 'Log In', href: '/login' },
-      { label: 'API Docs', href: '/docs' },
-    ],
-  },
-  {
-    title: 'Legal',
-    links: [
-      { label: 'Privacy Policy', href: '/privacy' },
-      { label: 'Terms of Service', href: '/terms' },
-      { label: 'Security', href: '/security' },
+      { label: 'Create Account', href: '/register' },
     ],
   },
 ];
@@ -63,7 +46,7 @@ const SOCIAL_LINKS = [
 export function Footer() {
   return (
     <footer className="border-t border-border-subtle bg-canvas-raised">
-      <div className="container-page grid grid-cols-2 gap-8 py-12 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="container-page grid grid-cols-2 gap-8 py-12 sm:grid-cols-4">
         {FOOTER_COLUMNS.map((column) => (
           <div key={column.title}>
             <h3 className="mb-3 text-sm font-semibold text-ink">{column.title}</h3>

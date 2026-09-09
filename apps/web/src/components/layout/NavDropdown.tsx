@@ -28,7 +28,7 @@ export function NavDropdown({
       onMouseLeave={() => setOpen(false)}
     >
       {href ? (
-        <div className="flex items-center text-sm text-ink-muted transition-colors hover:text-ink">
+        <div className="flex items-center whitespace-nowrap text-sm text-ink-muted transition-colors hover:text-ink">
           <Link href={href} className="py-2" onClick={() => setOpen(false)}>
             {label}
           </Link>
@@ -46,7 +46,7 @@ export function NavDropdown({
         <button
           type="button"
           onClick={() => setOpen((value) => !value)}
-          className="flex items-center gap-1 py-2 text-sm text-ink-muted transition-colors hover:text-ink"
+          className="flex items-center gap-1 whitespace-nowrap py-2 text-sm text-ink-muted transition-colors hover:text-ink"
           aria-expanded={open}
         >
           {label}

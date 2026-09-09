@@ -1,8 +1,7 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
-import { Menu, Search, X } from 'lucide-react';
+import { Link2, Menu, Search, X } from 'lucide-react';
 import { useUiStore } from '@/store/ui-store';
 import { NavDropdown } from './NavDropdown';
 import { LanguageSelector } from './LanguageSelector';
@@ -30,19 +29,19 @@ const MARKET_INTELLIGENCE_ITEMS = [
 
 const CATEGORY_ITEMS = [
   {
-    label: 'Category Explorer',
-    href: '/#categories',
-    description: 'Browse all procurement categories',
+    label: 'Available Categories',
+    href: '/market-intelligence',
+    description: 'Browse categories backed by active sources',
   },
   {
-    label: 'Packaging',
-    href: '/#categories',
-    description: 'Market score, trend, and outlook',
+    label: 'Approved Sources',
+    href: '/data-sources',
+    description: 'Review providers and current coverage',
   },
   {
-    label: 'Manufacturing',
-    href: '/#categories',
-    description: 'Market score, trend, and outlook',
+    label: 'Market Brief',
+    href: '/market-brief',
+    description: 'See priority movements and implications',
   },
 ];
 
@@ -57,7 +56,7 @@ const SIMPLE_LINKS = [
 const MOBILE_LINKS = [
   { label: 'Market Intelligence', href: '/market-intelligence' },
   { label: 'Market Brief', href: '/market-brief' },
-  { label: 'Categories', href: '/#categories' },
+  { label: 'Data Sources', href: '/data-sources' },
   { label: 'AI Assistant', href: '/assistant' },
   { label: 'Calculators', href: '/calculators' },
   { label: 'Benchmarking', href: '/benchmarking' },
@@ -69,27 +68,18 @@ export function Header() {
   const { mobileNavOpen, setMobileNavOpen, setSearchOpen } = useUiStore();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border-subtle bg-white">
-<div className="container-page flex h-16 min-w-0 items-center justify-between gap-2 overflow-visible">
-  {/* Logo */}
+    <header className="sticky top-0 z-50 border-b border-border-subtle bg-canvas/95 backdrop-blur-md">
+      <div className="container-page flex h-16 min-w-0 items-center justify-between gap-2 overflow-visible">
+        {/* Logo */}
         <Link href="/" className="flex shrink-0 items-center">
-          <Image
-            src="/logo.png"
-            alt="ProcureChain"
-            width={180}
-            height={80}
-            priority
-            className="h-14 w-auto object-contain"
-          />
-
-          <span className="hidden 2xl:inline text-xs font-normal text-ink-faint">
-            Intelligence Hub
-          </span>
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-white"><Link2 className="h-4 w-4" /></span>
+          <span className="ml-2 text-sm font-semibold tracking-tight text-ink">ProcureChain</span>
+          <span className="ml-2 hidden text-xs font-normal text-ink-faint 2xl:inline">Intelligence Hub</span>
         </Link>
 
         {/* Desktop Navigation */}
-<nav className="hidden min-w-0 flex-1 items-center justify-center gap-3 xl:flex">
-            <NavDropdown
+        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-3 xl:flex">
+          <NavDropdown
             label="Market Intelligence"
             href="/market-intelligence"
             items={MARKET_INTELLIGENCE_ITEMS}
@@ -104,7 +94,7 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-className="whitespace-nowrap text-xs text-ink-muted transition-colors hover:text-ink"
+              className="whitespace-nowrap text-xs text-ink-muted transition-colors hover:text-ink"
             >
               {link.label}
             </Link>
@@ -112,8 +102,8 @@ className="whitespace-nowrap text-xs text-ink-muted transition-colors hover:text
         </nav>
 
         {/* Desktop Actions */}
-<div className="hidden shrink-0 items-center gap-0.5 xl:flex">
-            <button
+        <div className="hidden shrink-0 items-center gap-0.5 xl:flex">
+          <button
             type="button"
             onClick={() => setSearchOpen(true)}
             aria-label="Search"
@@ -128,11 +118,11 @@ className="whitespace-nowrap text-xs text-ink-muted transition-colors hover:text
           <AuthMenu />
 
           <Link
-  href="/health-check"
-  className="ml-1 shrink-0 whitespace-nowrap rounded-md bg-accent px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
->
-  Procurement Health
-</Link>
+            href="/health-check"
+            className="ml-1 shrink-0 whitespace-nowrap rounded-md bg-accent px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
+          >
+            Procurement Health
+          </Link>
         </div>
 
         {/* Tablet + Mobile */}
@@ -148,7 +138,7 @@ className="whitespace-nowrap text-xs text-ink-muted transition-colors hover:text
 
           <button
             type="button"
-className="flex h-9 w-9 items-center justify-center text-gray-700 hover:text-gray-900"
+            className="flex h-9 w-9 items-center justify-center text-ink-muted hover:text-ink"
             aria-label="Toggle navigation menu"
             onClick={() => setMobileNavOpen(!mobileNavOpen)}
           >
@@ -159,7 +149,7 @@ className="flex h-9 w-9 items-center justify-center text-gray-700 hover:text-gra
 
       {/* Mobile / Tablet Menu */}
       {mobileNavOpen && (
-        <nav className="border-t border-border-subtle bg-white px-6 py-4 xl:hidden">
+        <nav className="border-t border-border-subtle bg-canvas px-6 py-4 xl:hidden">
           <ul className="flex flex-col gap-3">
 
             {MOBILE_LINKS.map((link) => (
