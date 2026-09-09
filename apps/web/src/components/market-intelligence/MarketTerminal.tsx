@@ -32,7 +32,7 @@ function fromCommodity(item: CommodityListEntry): TerminalInstrument {
 }
 
 function fromFx(item: FxListEntry): TerminalInstrument {
-  return { key: `fx:${item.quoteCode}`, id: item.quoteCode, kind: 'fx', name: `${item.baseCode}/${item.quoteCode}`, category: 'FX & Currencies', value: item.latestRate, currency: item.quoteCode, unit: `1 ${item.baseCode}`, changeShort: item.change7d, changeLong: item.change30d, shortLabel: item.periodShortLabel, longLabel: item.periodLongLabel, asOf: item.asOf, source: item.source, sourceUrl: item.sourceUrl, sparkline: item.sparkline, live: true };
+  return { key: `fx:${item.baseCode}:${item.quoteCode}`, id: `${item.baseCode}-${item.quoteCode}`, kind: 'fx', name: `${item.baseCode}/${item.quoteCode}`, category: 'FX & Currencies', value: item.latestRate, currency: item.quoteCode, unit: `1 ${item.baseCode}`, changeShort: item.change7d, changeLong: item.change30d, shortLabel: item.periodShortLabel, longLabel: item.periodLongLabel, asOf: item.asOf, source: item.source, sourceUrl: item.sourceUrl, sparkline: item.sparkline, live: true };
 }
 
 const pct = (value: number | null) => value === null ? '—' : `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;

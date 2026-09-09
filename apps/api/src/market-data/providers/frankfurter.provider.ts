@@ -6,7 +6,7 @@ const HISTORY_DAYS = 180;
 
 // Currencies most relevant to African procurement teams pricing in or
 // against USD. Frankfurter (ECB reference rates) needs no API key.
-export const TRACKED_CURRENCIES = ['EUR', 'GBP', 'ZAR', 'NGN', 'KES', 'EGP', 'GHS', 'CNY', 'BRL', 'SGD'] as const;
+export const TRACKED_CURRENCIES = ['EUR', 'GBP', 'ZAR', 'NGN', 'KES', 'EGP', 'GHS', 'CNY', 'JPY', 'CAD', 'AUD', 'BRL', 'SGD'] as const;
 
 export interface FxRatePoint {
   quoteCode: string;

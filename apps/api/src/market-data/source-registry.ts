@@ -30,6 +30,7 @@ export const SOURCE_NAMES = {
   fred: 'FRED (Federal Reserve Bank of St. Louis)',
   frankfurter: 'frankfurter.dev (ECB reference rates)',
   alphaVantage: 'Alpha Vantage',
+  eia: 'U.S. Energy Information Administration',
 } as const;
 
 export const DATA_SOURCE_REGISTRY: DataSourceRegistryEntry[] = [
@@ -195,7 +196,7 @@ export const DATA_SOURCE_REGISTRY: DataSourceRegistryEntry[] = [
     redistributionAllowed: 'terms_review_required' as LicenceReview,
     attributionRequired: true,
     licence: 'Provider terms and intended commercial use must be approved before activation',
-    status: 'planned' as SourceAvailability,
+    status: sourceId === 'eia' ? 'configuration_required' as SourceAvailability : 'planned' as SourceAvailability,
     lastSuccessfulFetch: null,
     lastFailedFetch: null,
     lastDataTimestamp: null,

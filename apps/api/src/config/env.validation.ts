@@ -38,6 +38,10 @@ class EnvironmentVariables {
 
   @IsString()
   @IsOptional()
+  EIA_API_KEY?: string;
+
+  @IsString()
+  @IsOptional()
   CLOUDFLARE_ACCOUNT_ID?: string;
 
   @IsString()

@@ -6,10 +6,11 @@ import { AlphaVantageProvider } from './providers/alpha-vantage.provider';
 import { WorldBankProvider } from './providers/world-bank.provider';
 import { FredProvider } from './providers/fred.provider';
 import { ImfProvider } from './providers/imf.provider';
+import { EiaProvider } from './providers/eia.provider';
 
 @Module({
   controllers: [MarketDataController],
-  providers: [MarketDataService, FrankfurterProvider, AlphaVantageProvider, WorldBankProvider, FredProvider, ImfProvider],
+  providers: [MarketDataService, FrankfurterProvider, AlphaVantageProvider, WorldBankProvider, FredProvider, ImfProvider, EiaProvider],
   exports: [MarketDataService],
 })
 export class MarketDataModule {}

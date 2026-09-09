@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, OnApplicationBootstrap } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import type Redis from 'ioredis';
 import { PrismaService } from '../prisma/prisma.service';
@@ -8,6 +8,7 @@ import { AlphaVantageProvider, TRACKED_COMMODITIES } from './providers/alpha-van
 import { WorldBankProvider } from './providers/world-bank.provider';
 import { FredProvider } from './providers/fred.provider';
 import { ImfProvider } from './providers/imf.provider';
+import { EiaProvider } from './providers/eia.provider';
 import { computeChangeStats, toCsv, type IndicatorFrequency } from './market-data.utils';
 import { DATA_SOURCE_REGISTRY, sourceUrlFor, type DataSourceRegistryEntry } from './source-registry';
 
@@ -19,6 +20,15 @@ export interface HistoryPoint {
 }
 
 const SPARKLINE_POINTS = 14;
+const DERIVED_FX_PAIRS = [
+  ['EUR', 'ZAR'],
+  ['GBP', 'ZAR'],
+  ['CNY', 'ZAR'],
+  ['JPY', 'ZAR'],
+  ['CAD', 'ZAR'],
+  ['AUD', 'ZAR'],
+  ['EUR', 'CNY'],
+] as const;
 
 export interface CommodityListEntry {
   symbol: string;
@@ -74,7 +84,7 @@ export interface DashboardPayload {
 }
 
 @Injectable()
-export class MarketDataService {
+export class MarketDataService implements OnApplicationBootstrap {
   private readonly logger = new Logger(MarketDataService.name);
 
   constructor(
@@ -84,8 +94,43 @@ export class MarketDataService {
     private readonly worldBank: WorldBankProvider,
     private readonly fred: FredProvider,
     private readonly imf: ImfProvider,
+    private readonly eia: EiaProvider,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {}
+
+  onApplicationBootstrap(): void {
+    // Cron jobs keep the feeds current, but a new database/deployment must not
+    // remain empty until the next overnight schedule. Run this asynchronously
+    // so the health endpoint can become ready while ingestion is in progress.
+    setTimeout(() => {
+      void this.refreshAvailableSources('startup');
+    }, 5_000);
+  }
+
+  async refreshAvailableSources(reason = 'manual'): Promise<void> {
+    this.logger.log(`Starting ${reason} refresh for available market-data sources`);
+
+    const coreResults = await Promise.allSettled([
+      this.refreshFx(),
+      this.refreshWorldBankCommodities(),
+      this.refreshFredIndicators(),
+      this.refreshImfIndicators(),
+      this.refreshEiaEnergy(),
+    ]);
+
+    const rejected = coreResults.filter((result) => result.status === 'rejected').length;
+    if (rejected > 0) {
+      this.logger.warn(`${reason} market-data refresh finished with ${rejected} rejected task(s)`);
+    } else {
+      this.logger.log(`${reason} market-data refresh complete`);
+    }
+
+    // Alpha Vantage's free tier needs deliberate spacing between calls, so do
+    // not make the public-source refresh or application startup wait for it.
+    if (this.commodities.isConfigured()) {
+      void this.refreshCommodities();
+    }
+  }
 
   @Cron(CronExpression.EVERY_6_HOURS)
   async refreshFx(): Promise<void> {
@@ -115,8 +160,45 @@ export class MarketDataService {
           },
         });
       }
+
+      const ratesByDate = new Map<number, Map<string, number>>();
+      for (const point of series.points) {
+        const timestamp = point.asOf.getTime();
+        const rates = ratesByDate.get(timestamp) ?? new Map<string, number>();
+        rates.set(point.quoteCode, point.rate);
+        ratesByDate.set(timestamp, rates);
+      }
+
+      let derivedPointCount = 0;
+      for (const [timestamp, rates] of ratesByDate) {
+        for (const [baseCode, quoteCode] of DERIVED_FX_PAIRS) {
+          const basePerUsd = rates.get(baseCode);
+          const quotePerUsd = rates.get(quoteCode);
+          if (!basePerUsd || !quotePerUsd) continue;
+
+          await this.prisma.currency.upsert({
+            where: { code: quoteCode },
+            update: {},
+            create: { code: quoteCode, name: quoteCode },
+          });
+          await this.prisma.exchangeRate.upsert({
+            where: {
+              baseCode_quoteCode_asOf: { baseCode, quoteCode, asOf: new Date(timestamp) },
+            },
+            update: { rate: quotePerUsd / basePerUsd, source: series.source },
+            create: {
+              baseCode,
+              quoteCode,
+              rate: quotePerUsd / basePerUsd,
+              asOf: new Date(timestamp),
+              source: series.source,
+            },
+          });
+          derivedPointCount += 1;
+        }
+      }
       await this.redis.del(DASHBOARD_CACHE_KEY);
-      this.logger.log(`Refreshed ${series.points.length} FX rate points`);
+      this.logger.log(`Refreshed ${series.points.length} direct and ${derivedPointCount} cross-rate FX points`);
     } catch (error) {
       this.logger.error('FX refresh failed', error as Error);
     }
@@ -174,9 +256,15 @@ export class MarketDataService {
     try {
       const seriesList = await this.worldBank.fetchAllSeries();
       for (const series of seriesList) {
+        const eiaDailySeries = this.eia.isConfigured() && (series.symbol === 'BRENT' || series.symbol === 'WTI');
         const record = await this.prisma.commodity.upsert({
           where: { symbol: series.symbol },
-          update: { name: series.name, unit: series.unit, category: series.category, frequency: 'monthly' },
+          update: {
+            name: series.name,
+            unit: series.unit,
+            category: series.category,
+            ...(eiaDailySeries ? {} : { frequency: 'monthly' }),
+          },
           create: {
             symbol: series.symbol,
             name: series.name,
@@ -204,6 +292,49 @@ export class MarketDataService {
       this.logger.log(`World Bank refresh complete: ${seriesList.length} commodities`);
     } catch (error) {
       this.logger.error('World Bank refresh failed', error as Error);
+    }
+  }
+
+  @Cron(CronExpression.EVERY_6_HOURS)
+  async refreshEiaEnergy(): Promise<void> {
+    if (!this.eia.isConfigured()) {
+      this.logger.warn('Skipping EIA refresh: EIA_API_KEY not set');
+      return;
+    }
+
+    try {
+      const seriesList = await this.eia.fetchAllSeries();
+      for (const series of seriesList) {
+        const record = await this.prisma.commodity.upsert({
+          where: { symbol: series.symbol },
+          update: { name: series.name, unit: series.unit, category: series.category, frequency: 'daily' },
+          create: {
+            symbol: series.symbol,
+            name: series.name,
+            unit: series.unit,
+            category: series.category,
+            frequency: 'daily',
+          },
+        });
+
+        for (const point of series.points) {
+          await this.prisma.commodityPrice.upsert({
+            where: { commodityId_asOf: { commodityId: record.id, asOf: point.asOf } },
+            update: { price: point.price, source: series.source },
+            create: {
+              commodityId: record.id,
+              price: point.price,
+              asOf: point.asOf,
+              source: series.source,
+            },
+          });
+        }
+      }
+
+      await this.redis.del(DASHBOARD_CACHE_KEY);
+      this.logger.log(`EIA refresh complete: ${seriesList.length} energy series`);
+    } catch (error) {
+      this.logger.error('EIA refresh failed', error as Error);
     }
   }
 
@@ -315,6 +446,9 @@ export class MarketDataService {
       if (source.sourceId === 'alpha-vantage') {
         return { ...source, status: this.commodities.isConfigured() ? 'active' : 'configuration_required' };
       }
+      if (source.sourceId === 'eia') {
+        return { ...source, status: this.eia.isConfigured() ? 'active' : 'configuration_required' };
+      }
       return source;
     });
   }
@@ -414,12 +548,15 @@ export class MarketDataService {
   }
 
   async listFx(): Promise<FxListEntry[]> {
-    const currencies = await this.prisma.currency.findMany();
+    const pairs = await this.prisma.exchangeRate.findMany({
+      distinct: ['baseCode', 'quoteCode'],
+      select: { baseCode: true, quoteCode: true },
+    });
     const results: FxListEntry[] = [];
 
-    for (const currency of currencies) {
+    for (const pair of pairs) {
       const rows = await this.prisma.exchangeRate.findMany({
-        where: { baseCode: 'USD', quoteCode: currency.code },
+        where: { baseCode: pair.baseCode, quoteCode: pair.quoteCode },
         orderBy: { asOf: 'desc' },
         take: HISTORY_LOOKBACK_POINTS,
       });
@@ -449,14 +586,16 @@ export class MarketDataService {
     return results;
   }
 
-  async getFxDetail(quoteCode: string): Promise<FxDetail> {
+  async getFxDetail(pairOrQuoteCode: string): Promise<FxDetail> {
+    const requested = pairOrQuoteCode.toUpperCase();
+    const [baseCode, quoteCode] = requested.includes('-') ? requested.split('-', 2) : ['USD', requested];
     const rows = await this.prisma.exchangeRate.findMany({
-      where: { baseCode: 'USD', quoteCode: quoteCode.toUpperCase() },
+      where: { baseCode, quoteCode },
       orderBy: { asOf: 'desc' },
       take: HISTORY_LOOKBACK_POINTS,
     });
     if (rows.length === 0) {
-      throw new NotFoundException(`No FX history yet for USD/${quoteCode}`);
+      throw new NotFoundException(`No FX history yet for ${baseCode}/${quoteCode}`);
     }
 
     const ascending = [...rows].reverse();
