@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Brush,
   CartesianGrid,
@@ -19,15 +19,16 @@ import {
   computeBollingerBands,
   computeRSI,
   computeTrendProjection,
-  filterByRange,
   simpleMovingAverage,
 } from '@/lib/chart-stats';
 
-const RANGES: Array<{ label: string; days: number | null }> = [
+const RANGES: Array<{ label: string; days: number }> = [
+  { label: '1D', days: 1 },
+  { label: '5D', days: 5 },
+  { label: '1M', days: 30 },
+  { label: '3M', days: 90 },
   { label: '6M', days: 180 },
   { label: '1Y', days: 365 },
-  { label: '3Y', days: 365 * 3 },
-  { label: 'All', days: null },
 ];
 
 const PROJECTION_HORIZONS = [
@@ -42,6 +43,13 @@ const MARKER_COLOR = '#a855f7';
 const BAND_COLOR = '#8b93a7';
 const RSI_COLOR = '#06b6d4';
 const PROJECTION_COLOR = '#ec4899';
+
+function pointsInActualRange(history: HistoryPoint[], days: number): HistoryPoint[] {
+  if (history.length === 0) return [];
+  const latest = Math.max(...history.map((point) => new Date(point.asOf).getTime()));
+  const cutoff = latest - days * 24 * 60 * 60 * 1000;
+  return history.filter((point) => new Date(point.asOf).getTime() >= cutoff);
+}
 
 // How close (in days) a real article's publish date must be to an actual
 // data point before we'll place a marker there — avoids implying precision
@@ -94,12 +102,24 @@ export function AdvancedPriceChart({
   compareLabel?: string;
   newsMarkers?: NewsMarker[];
 }) {
-  const [range, setRange] = useState(RANGES[3]);
+  const [range, setRange] = useState(RANGES[4]);
   const [overlay, setOverlay] = useState<Overlay>('sma');
   const [showRsi, setShowRsi] = useState(false);
   const [projectionHorizon, setProjectionHorizon] = useState<number | null>(null);
 
-  const windowed = useMemo(() => filterByRange(history, range.days), [history, range]);
+  const availableRanges = useMemo(
+    () => RANGES.filter((candidate) => pointsInActualRange(history, candidate.days).length >= 2),
+    [history],
+  );
+  useEffect(() => {
+    if (availableRanges.length > 0 && !availableRanges.some((candidate) => candidate.label === range.label)) {
+      setRange(availableRanges[availableRanges.length - 1]);
+    }
+  }, [availableRanges, range.label]);
+  const windowed = useMemo(
+    () => availableRanges.length > 0 ? pointsInActualRange(history, range.days) : history,
+    [availableRanges.length, history, range.days],
+  );
   const indicatorWindow = Math.min(20, Math.max(2, Math.floor(windowed.length / 3)));
   const smaSeries = useMemo(() => simpleMovingAverage(windowed, indicatorWindow), [windowed, indicatorWindow]);
   const bollinger = useMemo(() => computeBollingerBands(windowed, indicatorWindow), [windowed, indicatorWindow]);
@@ -168,7 +188,7 @@ export function AdvancedPriceChart({
     <div className="card p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1">
-          {RANGES.map((r) => (
+          {availableRanges.map((r) => (
             <button
               key={r.label}
               type="button"

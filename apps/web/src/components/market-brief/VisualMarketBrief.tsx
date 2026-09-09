@@ -21,7 +21,7 @@ export function VisualMarketBrief() {
     const relevance = (item: BriefSignal) => priorities.some((priority) => item.name.toLowerCase().includes(priority)) ? 1 : 0;
     return [
       ...data.commodities.map((item) => ({ key: item.symbol, name: item.name, value: item.latestPrice, unit: item.unit, change7d: item.change7d, change30d: item.change30d, history: item.sparkline, href: `/market-intelligence?instrument=${encodeURIComponent(`commodity:${item.symbol}`)}` })),
-      ...data.fx.map((item) => ({ key: item.quoteCode, name: `${item.baseCode}/${item.quoteCode}`, value: item.latestRate, unit: '', change7d: item.change7d, change30d: item.change30d, history: item.sparkline, href: `/market-intelligence?instrument=${encodeURIComponent(`fx:${item.quoteCode}`)}` })),
+      ...data.fx.map((item) => ({ key: `${item.baseCode}/${item.quoteCode}`, name: `${item.baseCode}/${item.quoteCode}`, value: item.latestRate, unit: '', change7d: item.change7d, change30d: item.change30d, history: item.sparkline, href: `/market-intelligence?instrument=${encodeURIComponent(`fx:${item.baseCode}:${item.quoteCode}`)}` })),
     ].filter((item) => Number.isFinite(item.value)).sort((a, b) => relevance(b) - relevance(a) || Math.abs(b.change7d ?? 0) - Math.abs(a.change7d ?? 0));
   }, [data, user]);
   const stories = (news ?? []).filter((story) => story.title && story.link).slice(0, 4);
