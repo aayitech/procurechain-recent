@@ -6,7 +6,7 @@
   },
   "deploy": {
     "preDeployCommand": "npm run prisma:deploy",
-    "startCommand": "npm run start",
+    "startCommand": "node dist/main.js",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",

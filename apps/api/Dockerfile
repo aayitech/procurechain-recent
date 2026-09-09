@@ -1,4 +1,10 @@
-FROM node:22-bookworm-slim AS build
+FROM node:22-bookworm-slim AS base
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+FROM base AS build
 
 WORKDIR /app
 
@@ -11,7 +17,7 @@ COPY src ./src
 
 RUN npm run build
 
-FROM node:22-bookworm-slim AS runtime
+FROM base AS runtime
 
 WORKDIR /app
 ENV NODE_ENV=production
@@ -22,4 +28,4 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 
 EXPOSE 4000
-CMD ["npm", "run", "start"]
+CMD ["node", "dist/main.js"]
