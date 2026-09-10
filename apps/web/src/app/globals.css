@@ -48,6 +48,20 @@
   color-scheme: light;
 }
 
+/* The primary navigation intentionally stays light in both page themes. */
+.site-header-light {
+  --color-canvas: 255 255 255;
+  --color-canvas-raised: 255 255 255;
+  --color-canvas-overlay: 247 248 250;
+  --color-border: 226 229 235;
+  --color-border-subtle: 236 238 242;
+  --color-ink: 18 21 28;
+  --color-ink-muted: 86 95 115;
+  --color-ink-faint: 136 145 163;
+  --shadow-card: 0 8px 24px rgba(16, 24, 40, 0.12);
+  color-scheme: light;
+}
+
 body {
   @apply bg-canvas text-ink antialiased transition-colors duration-200;
   overflow-x: hidden;

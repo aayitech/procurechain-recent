@@ -1,7 +1,8 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
-import { Link2, Menu, Search, X } from 'lucide-react';
+import { Menu, Search, X } from 'lucide-react';
 import { useUiStore } from '@/store/ui-store';
 import { NavDropdown } from './NavDropdown';
 import { LanguageSelector } from './LanguageSelector';
@@ -68,13 +69,18 @@ export function Header() {
   const { mobileNavOpen, setMobileNavOpen, setSearchOpen } = useUiStore();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border-subtle bg-canvas/95 backdrop-blur-md">
+    <header className="site-header-light sticky top-0 z-50 border-b border-border-subtle bg-canvas/95 backdrop-blur-md">
       <div className="container-page flex h-16 min-w-0 items-center justify-between gap-2 overflow-visible">
         {/* Logo */}
-        <Link href="/" className="flex shrink-0 items-center">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-white"><Link2 className="h-4 w-4" /></span>
-          <span className="ml-2 text-sm font-semibold tracking-tight text-ink">ProcureChain</span>
-          <span className="ml-2 hidden text-xs font-normal text-ink-faint 2xl:inline">Intelligence Hub</span>
+        <Link href="/" className="relative block h-11 w-[124px] shrink-0 overflow-hidden" aria-label="ProcureChain home">
+          <Image
+            src="/logo.png"
+            alt="ProcureChain"
+            width={124}
+            height={124}
+            priority
+            className="absolute -top-[44px] left-0 h-[124px] w-[124px] max-w-none"
+          />
         </Link>
 
         {/* Desktop Navigation */}
