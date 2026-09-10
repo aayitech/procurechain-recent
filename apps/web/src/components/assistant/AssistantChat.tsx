@@ -6,6 +6,7 @@ import { useAskAssistant } from '@/hooks/useAssistant';
 import { useTrackEngagement } from '@/hooks/useEngagement';
 import { useAuthStore } from '@/store/auth-store';
 import { GhlDemoDialog } from '@/components/leads/GhlDemoDialog';
+import { useLanguage } from '@/components/i18n/LanguageProvider';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -40,6 +41,7 @@ export function AssistantChat({ initialQuestion, currentContext = {} }: { initia
   const user = useAuthStore((state) => state.user);
   const [conversationId, setConversationId] = useState<string>();
   const [demoOpen, setDemoOpen] = useState(false);
+  const { locale, languageName } = useLanguage();
 
   function send(question: string) {
     const trimmed = question.trim();
@@ -63,7 +65,7 @@ export function AssistantChat({ initialQuestion, currentContext = {} }: { initia
     }
 
     mutate(
-      { question: trimmed, conversationId, currentContext, profile: user ? { name: user.firstName, country: user.country, currency: user.marketProfile?.currency, industry: user.industry, role: user.jobTitle, company: user.company, procurementCategories: user.marketProfile?.procurementCategories, marketInterests: user.marketProfile?.commodities, sourcingCountries: user.marketProfile?.sourcingCountries, tradeLanes: user.marketProfile?.tradeLanes } : undefined },
+      { question: trimmed, conversationId, currentContext: { ...currentContext, language: locale, languageName }, profile: user ? { name: user.firstName, country: user.country, currency: user.marketProfile?.currency, industry: user.industry, role: user.jobTitle, company: user.company, procurementCategories: user.marketProfile?.procurementCategories, marketInterests: user.marketProfile?.commodities, sourcingCountries: user.marketProfile?.sourcingCountries, tradeLanes: user.marketProfile?.tradeLanes } : undefined },
       {
         onSuccess: (data) => {
           setConversationId(data.conversationId);

@@ -100,7 +100,8 @@ export class AssistantService {
 
     const priorMessages = [...conversation.messages].reverse().map((message) => `${message.role}: ${message.content}`).join('\n');
     const personalContext = JSON.stringify({ profile: dto.profile ?? {}, currentPage: dto.currentContext ?? conversation.context ?? {} }, null, 2);
-    const userMessage = `Market data snapshot:\n${snapshotText}\n\nPersonal and current-page context (use only when relevant):\n${personalContext}\n\nRecent conversation:\n${priorMessages || 'No prior messages.'}\n\nUser question: ${dto.question}`;
+    const requestedLanguage = typeof dto.currentContext?.languageName === 'string' ? dto.currentContext.languageName : 'English';
+    const userMessage = `Response language: ${requestedLanguage}. Answer entirely in this language, while preserving source names, currency codes, symbols, and numeric values.\n\nMarket data snapshot:\n${snapshotText}\n\nPersonal and current-page context (use only when relevant):\n${personalContext}\n\nRecent conversation:\n${priorMessages || 'No prior messages.'}\n\nUser question: ${dto.question}`;
     await this.prisma.conversationMessage.create({ data: { conversationId: conversation.id, role: 'user', content: dto.question } });
 
     let answer: string;

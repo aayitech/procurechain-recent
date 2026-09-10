@@ -7,6 +7,7 @@ import { ThemeInit } from '@/components/theme/ThemeInit';
 import { PreferencesInit } from '@/components/theme/PreferencesInit';
 import { AuthInit } from '@/components/theme/AuthInit';
 import { GlobalSearch } from '@/components/layout/GlobalSearch';
+import { LanguageProvider } from '@/components/i18n/LanguageProvider';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
@@ -50,21 +51,34 @@ const THEME_INIT_SCRIPT = `
 })();
 `;
 
+const LANGUAGE_INIT_SCRIPT = `
+(function() {
+  try {
+    var language = localStorage.getItem('procurechain-language') || 'en';
+    document.documentElement.lang = language;
+    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+  } catch (e) {}
+})();
+`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" data-theme="dark" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: LANGUAGE_INIT_SCRIPT }} />
       </head>
       <body className="flex min-h-screen flex-col font-sans">
         <QueryProvider>
-          <ThemeInit />
-          <PreferencesInit />
-          <AuthInit />
-          <GlobalSearch />
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <LanguageProvider>
+            <ThemeInit />
+            <PreferencesInit />
+            <AuthInit />
+            <GlobalSearch />
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </LanguageProvider>
         </QueryProvider>
       </body>
     </html>
