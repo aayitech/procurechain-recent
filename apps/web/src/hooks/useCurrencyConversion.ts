@@ -17,7 +17,7 @@ export interface ConversionResult {
 
 export function useCurrencyConversion() {
   const currencyCode = usePreferencesStore((s) => s.currencyCode);
-  const { data: fxList } = useFxList();
+  const { data: fxList, isLoading: currenciesLoading } = useFxList();
 
   const usdRates = useMemo(() => {
     const rates = new Map<string, { rate: number; asOf: string }>();
@@ -56,5 +56,5 @@ export function useCurrencyConversion() {
     };
   }, [currencyCode, usdRates]);
 
-  return { currencyCode, convert, availableCurrencyCodes: new Set(usdRates.keys()) };
+  return { currencyCode, convert, availableCurrencyCodes: new Set(usdRates.keys()), currenciesLoading };
 }
