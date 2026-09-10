@@ -13,7 +13,7 @@ export function AuthMenu() {
 
   if (!user) {
     return (
-      <Link href="/login" className="px-2 text-sm text-ink-muted hover:text-ink">
+      <Link href="/login" className="whitespace-nowrap px-2 text-xs text-ink-muted hover:text-ink 2xl:text-sm">
         Log in
       </Link>
     );
@@ -24,7 +24,7 @@ export function AuthMenu() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-ink-muted transition-colors hover:bg-canvas-overlay hover:text-ink"
+        className="flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1.5 text-xs text-ink-muted transition-colors hover:bg-canvas-overlay hover:text-ink 2xl:text-sm"
       >
         <User size={15} />
         {user.firstName ?? user.email}

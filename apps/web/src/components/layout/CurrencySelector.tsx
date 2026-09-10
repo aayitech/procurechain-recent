@@ -18,7 +18,7 @@ export function CurrencySelector() {
           if (match && !country) setCountry(match.name);
         }}
         aria-label="Preferred currency"
-        className="appearance-none rounded-md bg-transparent py-1.5 pl-7 pr-2 text-sm text-ink-muted hover:text-ink focus:outline-none"
+        className="appearance-none rounded-md bg-transparent py-1.5 pl-7 pr-2 text-xs text-ink-muted hover:text-ink focus:outline-none 2xl:text-sm"
       >
         {TRACKED_CURRENCY_CODES.map((code) => (
           <option key={code} value={code} className="bg-canvas-raised text-ink">

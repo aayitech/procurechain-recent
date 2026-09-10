@@ -14,7 +14,7 @@ export function LanguageSelector() {
         value={locale}
         onChange={(e) => setLocale(e.target.value as SiteLocale)}
         aria-label="Select language"
-        className="appearance-none rounded-md bg-transparent py-1.5 pl-7 pr-2 text-sm text-ink-muted hover:text-ink focus:outline-none"
+        className="max-w-28 appearance-none truncate rounded-md bg-transparent py-1.5 pl-7 pr-2 text-xs text-ink-muted hover:text-ink focus:outline-none 2xl:max-w-36 2xl:text-sm"
       >
         {SITE_LANGUAGES.map((lang) => (
           <option key={lang.code} value={lang.code} className="bg-canvas-raised text-ink">

@@ -44,13 +44,23 @@ const CATEGORY_ITEMS = [
     href: '/market-brief',
     description: 'See priority movements and implications',
   },
+  {
+    label: 'Benchmarking',
+    href: '/benchmarking',
+    description: 'Compare procurement performance',
+  },
+  {
+    label: 'Knowledge Centre',
+    href: '/knowledge-centre',
+    description: 'Explore verified learning resources',
+  },
 ];
 
 const SIMPLE_LINKS = [
   { label: 'Market Brief', href: '/market-brief' },
   { label: 'Calculators', href: '/calculators' },
-  { label: 'Benchmarking', href: '/benchmarking' },
-  { label: 'Knowledge Centre', href: '/knowledge-centre' },
+  { label: 'Benchmarking', href: '/benchmarking', wideOnly: true },
+  { label: 'Knowledge Centre', href: '/knowledge-centre', wideOnly: true },
   { label: 'Book a Demo', href: '/book-demo' },
 ];
 
@@ -70,7 +80,7 @@ export function Header() {
 
   return (
     <header className="site-header-light sticky top-0 z-50 border-b border-border-subtle bg-[#FFFFFF]">
-      <div className="container-page flex h-16 min-w-0 items-center justify-between gap-2 overflow-visible">
+      <div className="mx-auto flex h-16 w-full max-w-[1600px] min-w-0 items-center justify-between gap-2 overflow-visible px-4 sm:px-6">
         {/* Logo */}
         <Link href="/" className="relative block h-11 w-[124px] shrink-0 overflow-hidden" aria-label="ProcureChain home">
           <Image
@@ -84,7 +94,7 @@ export function Header() {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-3 xl:flex">
+        <nav className="hidden min-w-0 flex-1 flex-nowrap items-center justify-center gap-2 xl:flex 2xl:gap-3">
           <NavDropdown
             label="Market Intelligence"
             href="/market-intelligence"
@@ -100,7 +110,7 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="whitespace-nowrap text-xs text-ink-muted transition-colors hover:text-ink"
+              className={`${link.wideOnly ? 'hidden 2xl:inline' : ''} whitespace-nowrap text-xs text-ink-muted transition-colors hover:text-ink`}
             >
               {link.label}
             </Link>
@@ -155,7 +165,7 @@ export function Header() {
 
       {/* Mobile / Tablet Menu */}
       {mobileNavOpen && (
-        <nav className="border-t border-border-subtle bg-[#FFFFFF] px-6 py-4 xl:hidden">
+        <nav className="max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-border-subtle bg-[#FFFFFF] px-6 py-4 xl:hidden">
           <ul className="flex flex-col gap-3">
 
             {MOBILE_LINKS.map((link) => (
