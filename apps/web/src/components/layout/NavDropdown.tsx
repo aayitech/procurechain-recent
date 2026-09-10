@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 export interface NavDropdownItem {
   label: string;
@@ -20,6 +21,8 @@ export function NavDropdown({
   items: NavDropdownItem[];
 }) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const active = Boolean(href && pathname === href);
 
   return (
     <div
@@ -28,8 +31,8 @@ export function NavDropdown({
       onMouseLeave={() => setOpen(false)}
     >
       {href ? (
-        <div className="flex items-center whitespace-nowrap text-xs text-ink-muted transition-colors hover:text-ink 2xl:text-sm">
-          <Link href={href} className="py-2" onClick={() => setOpen(false)}>
+        <div className={`flex items-center whitespace-nowrap rounded-lg pl-2.5 text-xs font-medium transition-colors 2xl:text-sm ${active ? 'bg-accent/10 text-accent' : 'text-ink-muted hover:bg-slate-100 hover:text-ink'}`}>
+          <Link href={href} className="py-2" aria-current={pathname === href ? 'page' : undefined} onClick={() => setOpen(false)}>
             {label}
           </Link>
           <button
@@ -46,7 +49,7 @@ export function NavDropdown({
         <button
           type="button"
           onClick={() => setOpen((value) => !value)}
-          className="flex items-center gap-1 whitespace-nowrap py-2 text-xs text-ink-muted transition-colors hover:text-ink 2xl:text-sm"
+          className={`flex items-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-2 text-xs font-medium transition-colors 2xl:text-sm ${active ? 'bg-accent/10 text-accent' : 'text-ink-muted hover:bg-slate-100 hover:text-ink'}`}
           aria-expanded={open}
         >
           {label}
@@ -56,12 +59,12 @@ export function NavDropdown({
 
       {open && (
         <div className="absolute left-1/2 top-full z-50 w-72 -translate-x-1/2 pt-3">
-          <div className="card overflow-hidden p-2">
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-900/10">
             {items.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="block rounded-lg px-3 py-2 transition-colors hover:bg-canvas-overlay"
+                className="block rounded-lg px-3 py-2 transition-colors hover:bg-slate-100"
                 onClick={() => setOpen(false)}
               >
                 <p className="text-sm font-medium text-ink">{item.label}</p>

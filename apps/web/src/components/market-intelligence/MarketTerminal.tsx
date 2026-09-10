@@ -10,10 +10,11 @@ import { AdvancedPriceChart } from './AdvancedPriceChart';
 import { CATEGORY_CONTEXT } from '@/lib/commodity-categories';
 import { MARKET_CATEGORIES, universeMatch, type MarketUniverseKind } from '@/lib/market-universe';
 import type { CommodityListEntry, FxListEntry, HistoryPoint } from '@/types/market-data';
+import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
 
 type TerminalInstrument = {
   key: string; id: string; kind: MarketUniverseKind; name: string; category: string;
-  value: number | null; currency: string; unit: string; changeShort: number | null;
+  value: number | null; currency: string; sourceCurrency: string; unit: string; changeShort: number | null;
   changeLong: number | null; shortLabel: string; longLabel: string | null;
   asOf: string | null; source: string | null; sourceUrl: string | null;
   sparkline: HistoryPoint[];
@@ -28,11 +29,11 @@ const normalizeCategory = (value: string) => categoryAliases[value.toLowerCase()
 
 function fromCommodity(item: CommodityListEntry): TerminalInstrument {
   const catalog = universeMatch('commodity', item.symbol, item.name);
-  return { key: `commodity:${item.symbol}`, id: item.symbol, kind: 'commodity', name: catalog?.name ?? item.name, category: catalog?.category ?? normalizeCategory(item.category), value: item.latestPrice, currency: item.currency, unit: item.unit, changeShort: item.change7d, changeLong: item.change30d, shortLabel: item.periodShortLabel, longLabel: item.periodLongLabel, asOf: item.asOf, source: item.source, sourceUrl: item.sourceUrl, sparkline: item.sparkline };
+  return { key: `commodity:${item.symbol}`, id: item.symbol, kind: 'commodity', name: catalog?.name ?? item.name, category: catalog?.category ?? normalizeCategory(item.category), value: item.latestPrice, currency: item.currency, sourceCurrency: item.currency, unit: item.unit, changeShort: item.change7d, changeLong: item.change30d, shortLabel: item.periodShortLabel, longLabel: item.periodLongLabel, asOf: item.asOf, source: item.source, sourceUrl: item.sourceUrl, sparkline: item.sparkline };
 }
 
 function fromFx(item: FxListEntry): TerminalInstrument {
-  return { key: `fx:${item.baseCode}:${item.quoteCode}`, id: `${item.baseCode}-${item.quoteCode}`, kind: 'fx', name: `${item.baseCode}/${item.quoteCode}`, category: 'FX & Currencies', value: item.latestRate, currency: item.quoteCode, unit: `1 ${item.baseCode}`, changeShort: item.change7d, changeLong: item.change30d, shortLabel: item.periodShortLabel, longLabel: item.periodLongLabel, asOf: item.asOf, source: item.source, sourceUrl: item.sourceUrl, sparkline: item.sparkline };
+  return { key: `fx:${item.baseCode}:${item.quoteCode}`, id: `${item.baseCode}-${item.quoteCode}`, kind: 'fx', name: `${item.baseCode}/${item.quoteCode}`, category: 'FX & Currencies', value: item.latestRate, currency: item.quoteCode, sourceCurrency: item.quoteCode, unit: `1 ${item.baseCode}`, changeShort: item.change7d, changeLong: item.change30d, shortLabel: item.periodShortLabel, longLabel: item.periodLongLabel, asOf: item.asOf, source: item.source, sourceUrl: item.sourceUrl, sparkline: item.sparkline };
 }
 
 const pct = (value: number | null) => value === null ? '—' : `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
@@ -53,14 +54,25 @@ export function MarketTerminal() {
   const { data: commodities = [], isLoading: commoditiesLoading } = useCommodityList();
   const { data: fx = [], isLoading: fxLoading } = useFxList();
   const { toggle, isWatched } = useWatchlist();
+  const { currencyCode, convert } = useCurrencyConversion();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<(typeof MARKET_CATEGORIES)[number]>('All');
   const [sort, setSort] = useState<'priority' | 'name' | 'movement'>('priority');
   const [selectedKey, setSelectedKey] = useState('');
 
   const instruments = useMemo(() => {
-    return [...commodities.map(fromCommodity), ...fx.map(fromFx)];
-  }, [commodities, fx]);
+    const raw = [...commodities.map(fromCommodity), ...fx.map(fromFx)];
+    return raw.map((item) => {
+      if (item.kind !== 'commodity' || item.value === null) return item;
+      const converted = convert(item.value, item.currency);
+      return {
+        ...item,
+        value: converted.amount,
+        currency: converted.currencyCode,
+        sparkline: item.sparkline.map((point) => ({ ...point, price: convert(point.price, item.currency).amount })),
+      };
+    });
+  }, [commodities, convert, currencyCode, fx]);
 
   const availableCategories = useMemo(() => {
     const present = new Set(instruments.map((item) => item.category));
@@ -90,6 +102,12 @@ export function MarketTerminal() {
   const { data: commodityDetail } = useCommodityDetail(selected?.kind === 'commodity' ? selected.id : '');
   const { data: fxDetail } = useFxDetail(selected?.kind === 'fx' ? selected.id : '');
   const history = selected?.kind === 'commodity' ? commodityDetail?.history : selected?.kind === 'fx' ? fxDetail?.history : undefined;
+  const chartHistory = useMemo(() => {
+    if (!selected) return [];
+    if (!history) return selected.sparkline;
+    if (selected.kind !== 'commodity' || selected.currency === selected.sourceCurrency) return history;
+    return history.map((point) => ({ ...point, price: convert(point.price, selected.sourceCurrency).amount }));
+  }, [convert, currencyCode, history, selected]);
   const context = selected ? CATEGORY_CONTEXT[selected.category] ?? (selected.kind === 'fx' ? 'Currency movement can change the local cost of imported goods and foreign-currency contracts.' : 'This market can influence input cost, landed cost, supplier pricing, or contract timing when verified data is available.') : '';
 
   function selectInstrument(key: string) {
@@ -108,7 +126,7 @@ export function MarketTerminal() {
     <main className="space-y-4">
       <section className="card overflow-hidden">
         <div className="grid gap-4 border-b border-border-subtle p-5 lg:grid-cols-[1fr_auto]"><div><div className="flex flex-wrap items-center gap-2"><button type="button" onClick={() => toggle(selected.key)} aria-label="Toggle watchlist"><Star size={18} className={isWatched(selected.key) ? 'fill-warning text-warning' : 'text-ink-faint'} /></button><h2 className="text-2xl font-semibold text-ink">{selected.name}</h2><span className="rounded-full bg-accent/10 px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-accent">{selected.category}</span><span className="inline-flex items-center gap-1 text-xs text-positive"><CheckCircle2 size={13} /> Verified data</span></div><p className="mt-3 font-mono text-3xl font-semibold text-ink">{selected.value?.toLocaleString(undefined, { maximumFractionDigits: 4 })}<span className="ml-2 text-sm font-normal text-ink-faint">{selected.currency} · {selected.unit}</span></p><div className="mt-2 flex flex-wrap gap-5 text-xs"><span>{selected.shortLabel} <Movement value={selected.changeShort} /></span>{selected.longLabel && <span>{selected.longLabel} <Movement value={selected.changeLong} /></span>}</div></div><div className="flex flex-col items-start gap-4 text-xs text-ink-faint lg:items-end lg:text-right"><div><p>Data period</p><p className="mt-1 text-ink">{selected.asOf ? new Date(selected.asOf).toLocaleDateString('en-ZA', { dateStyle: 'medium' }) : '—'}</p><p className="mt-3">Source</p>{selected.sourceUrl ? <a href={selected.sourceUrl} target="_blank" rel="noreferrer" className="mt-1 block max-w-64 text-accent hover:underline">{selected.source}</a> : <p className="mt-1 max-w-64 text-ink">{selected.source}</p>}</div><Link href={`/assistant?instrument=${encodeURIComponent(selected.key)}&category=${encodeURIComponent(selected.category)}`} className="inline-flex items-center gap-2 rounded-lg bg-accent px-3 py-2 font-medium text-white hover:bg-accent-hover"><MessageSquare size={14} /> Ask about this market</Link></div></div>
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_300px]"><div className="min-h-80 p-4"><AdvancedPriceChart history={history ?? selected.sparkline} unit={selected.unit} /></div><div className="border-t border-border-subtle p-5 lg:border-l lg:border-t-0"><p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Procurement impact</p><p className="mt-3 text-sm leading-6 text-ink-muted">{context}</p><p className="mt-6 text-xs font-semibold uppercase tracking-wide text-ink-faint">Data confidence</p><p className="mt-2 text-sm font-medium text-positive">Source-verified observation</p></div></div>
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_300px]"><div className="min-h-80 p-4"><AdvancedPriceChart history={chartHistory} unit={`${selected.currency} · ${selected.unit}`} />{selected.kind === 'commodity' && selected.currency !== selected.sourceCurrency && <p className="mt-1 text-center text-[10px] text-ink-faint">Displayed in {selected.currency} using the latest verified FX rate; source data is {selected.sourceCurrency}.</p>}</div><div className="border-t border-border-subtle p-5 lg:border-l lg:border-t-0"><p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Procurement impact</p><p className="mt-3 text-sm leading-6 text-ink-muted">{context}</p><p className="mt-6 text-xs font-semibold uppercase tracking-wide text-ink-faint">Data confidence</p><p className="mt-2 text-sm font-medium text-positive">Source-verified observation</p></div></div>
       </section>
       <section className="card overflow-hidden"><div className="flex flex-col gap-3 border-b border-border-subtle p-4 lg:flex-row lg:items-center lg:justify-between"><div><h2 className="font-semibold text-ink">Market instruments</h2><p className="text-xs text-ink-faint">Search available verified markets; select any row without leaving the terminal.</p></div><div className="flex flex-wrap gap-2"><label className="flex min-w-52 items-center gap-2 rounded-lg border border-border bg-canvas px-3 py-2"><Search size={14} className="text-ink-faint" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search available commodities and FX…" className="min-w-0 flex-1 bg-transparent text-xs text-ink outline-none" /></label><select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)} className="rounded-lg border border-border bg-canvas px-3 py-2 text-xs text-ink"><option value="priority">Priority</option><option value="movement">Largest movement</option><option value="name">Name</option></select></div></div>
         <div className="max-h-[560px] overflow-y-auto md:hidden">

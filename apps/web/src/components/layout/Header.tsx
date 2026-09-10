@@ -9,6 +9,7 @@ import { LanguageSelector } from './LanguageSelector';
 import { CurrencySelector } from './CurrencySelector';
 import { AuthMenu } from './AuthMenu';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { usePathname } from 'next/navigation';
 
 const MARKET_INTELLIGENCE_ITEMS = [
   {
@@ -77,9 +78,10 @@ const MOBILE_LINKS = [
 
 export function Header() {
   const { mobileNavOpen, setMobileNavOpen, setSearchOpen } = useUiStore();
+  const pathname = usePathname();
 
   return (
-    <header className="site-header-light sticky top-0 z-50 border-b border-border-subtle bg-[#FFFFFF]">
+    <header className="site-header-light sticky top-0 z-50 border-b border-slate-200 bg-[#FFFFFF] shadow-[0_4px_20px_rgba(15,23,42,0.06)]">
       <div className="mx-auto flex h-16 w-full max-w-[1600px] min-w-0 items-center justify-between gap-2 overflow-visible px-4 sm:px-6">
         {/* Logo */}
         <Link href="/" className="relative block h-11 w-[124px] shrink-0 overflow-hidden" aria-label="ProcureChain home">
@@ -110,7 +112,8 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className={`${link.wideOnly ? 'hidden 2xl:inline' : ''} whitespace-nowrap text-xs text-ink-muted transition-colors hover:text-ink`}
+              aria-current={pathname === link.href ? 'page' : undefined}
+              className={`${link.wideOnly ? 'hidden 2xl:inline-flex' : 'inline-flex'} items-center whitespace-nowrap rounded-lg px-2.5 py-2 text-xs font-medium transition-colors 2xl:text-sm ${pathname === link.href ? 'bg-accent/10 text-accent' : 'text-ink-muted hover:bg-slate-100 hover:text-ink'}`}
             >
               {link.label}
             </Link>
@@ -118,7 +121,7 @@ export function Header() {
         </nav>
 
         {/* Desktop Actions */}
-        <div className="hidden shrink-0 items-center gap-0.5 xl:flex">
+        <div className="hidden shrink-0 items-center gap-0.5 border-l border-slate-200 pl-2 xl:flex">
           <button
             type="button"
             onClick={() => setSearchOpen(true)}
@@ -172,7 +175,8 @@ export function Header() {
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="block text-sm text-ink-muted hover:text-ink"
+                  aria-current={pathname === link.href ? 'page' : undefined}
+                  className={`block rounded-lg px-3 py-2 text-sm font-medium ${pathname === link.href ? 'bg-accent/10 text-accent' : 'text-ink-muted hover:bg-slate-100 hover:text-ink'}`}
                   onClick={() => setMobileNavOpen(false)}
                 >
                   {link.label}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { usePreferencesStore } from '@/store/preferences-store';
 import { useFxList } from './useMarketIntelligence';
 import { isCurrencyTracked } from '@/lib/currencies';
@@ -12,34 +12,49 @@ export interface ConversionResult {
   isUsd: boolean;
   isTracked: boolean;
   rateAsOf: string | null;
+  sourceCurrencyCode: string;
 }
 
 export function useCurrencyConversion() {
   const currencyCode = usePreferencesStore((s) => s.currencyCode);
   const { data: fxList } = useFxList();
 
-  const rateEntry = useMemo(
-    () => (fxList ?? []).find((f) => f.quoteCode === currencyCode),
-    [fxList, currencyCode],
-  );
+  const usdRates = useMemo(() => {
+    const rates = new Map<string, { rate: number; asOf: string }>();
+    rates.set('USD', { rate: 1, asOf: '' });
+    for (const entry of fxList ?? []) {
+      if (entry.baseCode === 'USD' && Number.isFinite(entry.latestRate) && entry.latestRate > 0) {
+        rates.set(entry.quoteCode, { rate: entry.latestRate, asOf: entry.asOf });
+      }
+    }
+    return rates;
+  }, [fxList]);
 
-  function convert(usdAmount: number): ConversionResult {
-    if (currencyCode === 'USD') {
-      return { amount: usdAmount, currencyCode: 'USD', rate: 1, isUsd: true, isTracked: true, rateAsOf: null };
+  const convert = useCallback((amount: number, sourceCurrencyCode = 'USD'): ConversionResult => {
+    const sourceCode = sourceCurrencyCode.toUpperCase();
+    const targetRate = usdRates.get(currencyCode);
+    const sourceRate = usdRates.get(sourceCode);
+
+    if (sourceCode === currencyCode) {
+      return { amount, currencyCode, rate: 1, isUsd: currencyCode === 'USD', isTracked: true, rateAsOf: null, sourceCurrencyCode: sourceCode };
     }
-    if (!isCurrencyTracked(currencyCode) || !rateEntry) {
-      // No real rate for this currency — stay in USD rather than fabricate one.
-      return { amount: usdAmount, currencyCode: 'USD', rate: null, isUsd: true, isTracked: false, rateAsOf: null };
+
+    if (!isCurrencyTracked(currencyCode) || !targetRate || !sourceRate) {
+      // Keep the verified source currency when a cross-rate is unavailable.
+      return { amount, currencyCode: sourceCode, rate: null, isUsd: sourceCode === 'USD', isTracked: false, rateAsOf: null, sourceCurrencyCode: sourceCode };
     }
+
+    const crossRate = targetRate.rate / sourceRate.rate;
     return {
-      amount: usdAmount * rateEntry.latestRate,
+      amount: amount * crossRate,
       currencyCode,
-      rate: rateEntry.latestRate,
-      isUsd: false,
+      rate: crossRate,
+      isUsd: currencyCode === 'USD',
       isTracked: true,
-      rateAsOf: rateEntry.asOf,
+      rateAsOf: targetRate.asOf || sourceRate.asOf || null,
+      sourceCurrencyCode: sourceCode,
     };
-  }
+  }, [currencyCode, usdRates]);
 
-  return { currencyCode, convert };
+  return { currencyCode, convert, availableCurrencyCodes: new Set(usdRates.keys()) };
 }
