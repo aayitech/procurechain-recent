@@ -58,7 +58,7 @@ export function AssistantChat({ initialQuestion, currentContext = {} }: { initia
     if (BOOKING_INTENT.test(trimmed)) {
       setMessages((prev) => [...prev, {
         role: 'assistant',
-        content: 'I can help you book a ProcureChain demo. Please complete the secure booking form that is opening now. Once you submit it, GoHighLevel will capture your details and start the configured follow-up workflow. Your booking is not confirmed until the form is submitted.',
+        content: 'I can help you book a ProcureChain demo. Please complete the secure booking form that is opening now. Once you submit it, Our team will capture your details and start the configured follow-up workflow. Your booking is not confirmed until the form is submitted.',
       }]);
       setDemoOpen(true);
       return;
