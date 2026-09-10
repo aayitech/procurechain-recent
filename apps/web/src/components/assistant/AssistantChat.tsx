@@ -23,6 +23,8 @@ const EXAMPLE_PROMPTS = [
 
 const TOPICS = ['Packaging costs', 'Diesel outlook', 'Freight exposure', 'USD/ZAR impact', 'Metals watch'];
 
+const BOOKING_INTENT = /\bbook\s+me\b|\b(book|schedule|arrange|request|register|sign\s*up|speak|talk|contact)\b.{0,40}\b(demo|call|meeting|consultation|account|procurechain)\b|\b(demo|call|meeting|consultation)\b.{0,40}\b(book|schedule|arrange|request|register|sign\s*up)\b/i;
+
 function formatTime(iso: string) {
   return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
@@ -50,6 +52,15 @@ export function AssistantChat({ initialQuestion, currentContext = {} }: { initia
 
     setMessages((prev) => [...prev, { role: 'user', content: trimmed }]);
     setInput('');
+
+    if (BOOKING_INTENT.test(trimmed)) {
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content: 'I can help you book a ProcureChain demo. Please complete the secure booking form that is opening now. Once you submit it, GoHighLevel will capture your details and start the configured follow-up workflow. Your booking is not confirmed until the form is submitted.',
+      }]);
+      setDemoOpen(true);
+      return;
+    }
 
     mutate(
       { question: trimmed, conversationId, currentContext, profile: user ? { name: user.firstName, country: user.country, currency: user.marketProfile?.currency, industry: user.industry, role: user.jobTitle, company: user.company, procurementCategories: user.marketProfile?.procurementCategories, marketInterests: user.marketProfile?.commodities, sourcingCountries: user.marketProfile?.sourcingCountries, tradeLanes: user.marketProfile?.tradeLanes } : undefined },

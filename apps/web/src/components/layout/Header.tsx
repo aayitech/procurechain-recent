@@ -69,7 +69,7 @@ export function Header() {
   const { mobileNavOpen, setMobileNavOpen, setSearchOpen } = useUiStore();
 
   return (
-    <header className="site-header-light sticky top-0 z-50 border-b border-border-subtle bg-canvas/95 backdrop-blur-md">
+    <header className="site-header-light sticky top-0 z-50 border-b border-border-subtle bg-[#FFFFFF]">
       <div className="container-page flex h-16 min-w-0 items-center justify-between gap-2 overflow-visible">
         {/* Logo */}
         <Link href="/" className="relative block h-11 w-[124px] shrink-0 overflow-hidden" aria-label="ProcureChain home">
@@ -155,7 +155,7 @@ export function Header() {
 
       {/* Mobile / Tablet Menu */}
       {mobileNavOpen && (
-        <nav className="border-t border-border-subtle bg-canvas px-6 py-4 xl:hidden">
+        <nav className="border-t border-border-subtle bg-[#FFFFFF] px-6 py-4 xl:hidden">
           <ul className="flex flex-col gap-3">
 
             {MOBILE_LINKS.map((link) => (
