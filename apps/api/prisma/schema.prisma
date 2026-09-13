@@ -33,6 +33,7 @@ model User {
   provider      AuthProvider       @default(EMAIL)
   providerId    String?
   emailVerifiedAt DateTime?
+  onboardingCompletedAt DateTime?
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   marketProfile UserMarketProfile?

@@ -2,7 +2,6 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useRequestLoginCode, useVerifyLoginCode } from '@/hooks/useAuth';
 
 export default function LoginPage() {
@@ -35,7 +34,14 @@ export default function LoginPage() {
 
   function handleVerifyCode(event: FormEvent) {
     event.preventDefault();
-    verifyCode.mutate({ email, code }, { onSuccess: () => router.push('/') });
+    verifyCode.mutate(
+      { email, code },
+      {
+        onSuccess: (result) => {
+          router.push(result.user.onboardingCompletedAt ? '/' : '/onboarding');
+        },
+      },
+    );
   }
 
   function changeEmail() {
@@ -51,7 +57,9 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <h1 className="text-2xl font-semibold text-ink">Log in</h1>
         <p className="mt-1 text-sm text-ink-muted">
-          {codeSent ? `Enter the code sent to ${email}.` : 'Enter your email — no password required.'}
+          {codeSent
+            ? `Enter the code sent to ${email}.`
+            : 'Enter your email to log in or create your free account — no password required.'}
         </p>
 
         {!codeSent ? (
@@ -125,11 +133,8 @@ export default function LoginPage() {
           </form>
         )}
 
-        <p className="mt-6 text-center text-sm text-ink-muted">
-          New to ProcureChain?{' '}
-          <Link href="/register" className="text-accent hover:underline">
-            Sign up free
-          </Link>
+        <p className="mt-6 text-center text-xs leading-5 text-ink-muted">
+          New users complete a short market-profile form after verification.
         </p>
       </div>
     </div>

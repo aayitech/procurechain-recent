@@ -29,6 +29,14 @@ export class AuthController {
     return this.authService.verifyLoginCode(dto);
   }
 
+  @Post('onboarding/complete')
+  @HttpCode(HttpStatus.OK)
+  @Header('Cache-Control', 'no-store')
+  @UseGuards(JwtAuthGuard)
+  completeOnboarding(@Req() req: Request) {
+    return this.authService.completeOnboarding((req.user as JwtPayload).sub);
+  }
+
   @Get('me')
   @UseGuards(JwtAuthGuard)
   me(@Req() req: Request) {

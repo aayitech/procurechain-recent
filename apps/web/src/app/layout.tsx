@@ -6,6 +6,7 @@ import { Footer } from '@/components/layout/Footer';
 import { ThemeInit } from '@/components/theme/ThemeInit';
 import { PreferencesInit } from '@/components/theme/PreferencesInit';
 import { AuthInit } from '@/components/theme/AuthInit';
+import { OnboardingGuard } from '@/components/auth/OnboardingGuard';
 import { GlobalSearch } from '@/components/layout/GlobalSearch';
 import { LanguageProvider } from '@/components/i18n/LanguageProvider';
 import './globals.css';
@@ -74,6 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <ThemeInit />
             <PreferencesInit />
             <AuthInit />
+            <OnboardingGuard />
             <GlobalSearch />
             <Header />
             <main className="flex-1">{children}</main>

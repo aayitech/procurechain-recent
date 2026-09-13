@@ -23,6 +23,7 @@ export interface AuthResult {
     industry: string | null;
     jobTitle: string | null;
     role: string;
+    onboardingCompletedAt: Date | null;
     marketProfile: {
       regionCity: string | null;
       currency: string | null;
@@ -134,6 +135,15 @@ export class AuthService {
     return this.buildAuthResult(user);
   }
 
+  async completeOnboarding(userId: string): Promise<AuthResult['user']> {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { onboardingCompletedAt: new Date() },
+      include: { marketProfile: true },
+    });
+    return this.buildUser(user);
+  }
+
   private normalizeEmail(email: string): string {
     return email.trim().toLowerCase();
   }
@@ -153,23 +163,41 @@ export class AuthService {
     industry: string | null;
     jobTitle: string | null;
     role: string;
+    onboardingCompletedAt: Date | null;
     marketProfile: AuthResult['user']['marketProfile'];
   }): AuthResult {
     const accessToken = this.jwt.sign({ sub: user.id, email: user.email, role: user.role });
     return {
       accessToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        company: user.company,
-        country: user.country,
-        industry: user.industry,
-        jobTitle: user.jobTitle,
-        role: user.role,
-        marketProfile: user.marketProfile,
-      },
+      user: this.buildUser(user),
+    };
+  }
+
+  private buildUser(user: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    company: string | null;
+    country: string | null;
+    industry: string | null;
+    jobTitle: string | null;
+    role: string;
+    onboardingCompletedAt: Date | null;
+    marketProfile: AuthResult['user']['marketProfile'];
+  }): AuthResult['user'] {
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      company: user.company,
+      country: user.country,
+      industry: user.industry,
+      jobTitle: user.jobTitle,
+      role: user.role,
+      onboardingCompletedAt: user.onboardingCompletedAt,
+      marketProfile: user.marketProfile,
     };
   }
 }

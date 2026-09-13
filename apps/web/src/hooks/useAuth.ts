@@ -25,3 +25,11 @@ export function useVerifyLoginCode() {
     onSuccess: (data) => setAuth(data.accessToken, data.user),
   });
 }
+
+export function useCompleteOnboarding() {
+  const updateUser = useAuthStore((state) => state.updateUser);
+  return useMutation({
+    mutationFn: () => apiClient.post<AuthResponse['user']>('/auth/onboarding/complete', {}),
+    onSuccess: (user) => updateUser(user),
+  });
+}

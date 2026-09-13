@@ -8,6 +8,7 @@ export interface AuthUser {
   industry: string | null;
   jobTitle: string | null;
   role: string;
+  onboardingCompletedAt: string | null;
   marketProfile: {
     regionCity: string | null;
     currency: string | null;
