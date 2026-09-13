@@ -25,26 +25,17 @@ export interface AuthResponse {
   user: AuthUser;
 }
 
-export interface RegisterInput {
+export interface RequestLoginCodeInput {
   email: string;
-  password: string;
-  firstName: string;
-  lastName?: string;
-  company?: string;
-  country?: string;
-  industry?: string;
-  jobTitle?: string;
-  regionCity?: string;
-  currency?: string;
-  procurementCategories?: string[];
-  commodities?: string[];
-  purchaseMix?: string;
-  sourcingCountries?: string[];
-  tradeLanes?: string[];
-  procurementChallenges?: string[];
 }
 
-export interface LoginInput {
+export interface RequestLoginCodeResponse {
+  message: string;
+  expiresInSeconds: number;
+  developmentCode?: string;
+}
+
+export interface VerifyLoginCodeInput {
   email: string;
-  password: string;
+  code: string;
 }

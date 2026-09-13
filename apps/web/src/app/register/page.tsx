@@ -14,6 +14,10 @@ export default function RegisterPage() {
           <GhlSignupEmbed />
         </div>
 
+        <p className="mt-4 text-center text-xs leading-5 text-ink-muted">
+          After submitting, use the same email address to receive your secure login code.
+        </p>
+
         <p className="mt-4 text-center text-sm text-ink-muted">
           Already registered?{' '}
           <Link href="/login" className="text-accent hover:underline">

@@ -1,11 +1,15 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import { createHmac, randomInt, timingSafeEqual } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { AuthEmailService } from './auth-email.service';
+import { RequestLoginCodeDto } from './dto/request-login-code.dto';
+import { VerifyLoginCodeDto } from './dto/verify-login-code.dto';
 
-const SALT_ROUNDS = 12;
+const CODE_TTL_MINUTES = 10;
+const CODE_RESEND_COOLDOWN_MS = 60_000;
+const MAX_CODE_ATTEMPTS = 5;
 
 export interface AuthResult {
   accessToken: string;
@@ -32,62 +36,111 @@ export interface AuthResult {
   };
 }
 
+export interface LoginCodeRequestedResult {
+  message: string;
+  expiresInSeconds: number;
+  developmentCode?: string;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
+    private readonly config: ConfigService,
+    private readonly email: AuthEmailService,
   ) {}
 
-  async register(dto: RegisterDto): Promise<AuthResult> {
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
-    if (existing) {
-      throw new ConflictException('An account with this email already exists');
+  async requestLoginCode(dto: RequestLoginCodeDto): Promise<LoginCodeRequestedResult> {
+    const email = this.normalizeEmail(dto.email);
+    const now = new Date();
+    const previous = await this.prisma.passwordlessLoginCode.findUnique({ where: { email } });
+
+    if (previous && now.getTime() - previous.createdAt.getTime() < CODE_RESEND_COOLDOWN_MS) {
+      throw new HttpException('Please wait one minute before requesting another code', HttpStatus.TOO_MANY_REQUESTS);
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, SALT_ROUNDS);
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        passwordHash,
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        company: dto.company,
-        country: dto.country,
-        industry: dto.industry,
-        jobTitle: dto.jobTitle,
-        provider: 'EMAIL',
-        marketProfile: {
-          create: {
-            regionCity: dto.regionCity,
-            currency: dto.currency,
-            procurementCategories: dto.procurementCategories ?? [],
-            commodities: dto.commodities ?? [],
-            purchaseMix: dto.purchaseMix,
-            sourcingCountries: dto.sourcingCountries ?? [],
-            tradeLanes: dto.tradeLanes ?? [],
-            procurementChallenges: dto.procurementChallenges ?? [],
-          },
-        },
-      },
-      include: { marketProfile: true },
+    const code = String(randomInt(100_000, 1_000_000));
+    const codeHash = this.hashCode(email, code);
+    const expiresAt = new Date(now.getTime() + CODE_TTL_MINUTES * 60_000);
+
+    await this.prisma.passwordlessLoginCode.upsert({
+      where: { email },
+      update: { codeHash, expiresAt, attempts: 0, consumedAt: null, createdAt: now },
+      create: { email, codeHash, expiresAt },
+    });
+
+    let delivered: boolean;
+    try {
+      delivered = await this.email.sendLoginCode(email, code);
+    } catch (error) {
+      await this.prisma.passwordlessLoginCode.deleteMany({ where: { email, codeHash } });
+      throw error;
+    }
+
+    return {
+      message: 'A verification code has been sent to your email address',
+      expiresInSeconds: CODE_TTL_MINUTES * 60,
+      ...(!delivered && this.config.get<string>('NODE_ENV') !== 'production' ? { developmentCode: code } : {}),
+    };
+  }
+
+  async verifyLoginCode(dto: VerifyLoginCodeDto): Promise<AuthResult> {
+    const email = this.normalizeEmail(dto.email);
+    const record = await this.prisma.passwordlessLoginCode.findUnique({ where: { email } });
+    const now = new Date();
+
+    if (!record || record.consumedAt || record.expiresAt <= now || record.attempts >= MAX_CODE_ATTEMPTS) {
+      throw new UnauthorizedException('The verification code is invalid or has expired');
+    }
+
+    const suppliedHash = this.hashCode(email, dto.code);
+    const matches = timingSafeEqual(Buffer.from(record.codeHash, 'hex'), Buffer.from(suppliedHash, 'hex'));
+
+    if (!matches) {
+      await this.prisma.passwordlessLoginCode.update({
+        where: { id: record.id },
+        data: { attempts: { increment: 1 } },
+      });
+      throw new UnauthorizedException('The verification code is invalid or has expired');
+    }
+
+    const user = await this.prisma.$transaction(async (transaction) => {
+      const consumed = await transaction.passwordlessLoginCode.deleteMany({
+        where: { id: record.id, codeHash: record.codeHash, consumedAt: null, expiresAt: { gt: now } },
+      });
+      if (consumed.count !== 1) {
+        throw new UnauthorizedException('The verification code is invalid or has expired');
+      }
+
+      const existing = await transaction.user.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' } },
+      });
+
+      if (existing) {
+        return transaction.user.update({
+          where: { id: existing.id },
+          data: { emailVerifiedAt: now },
+          include: { marketProfile: true },
+        });
+      }
+
+      return transaction.user.create({
+        data: { email, emailVerifiedAt: now, provider: 'EMAIL' },
+        include: { marketProfile: true },
+      });
     });
 
     return this.buildAuthResult(user);
   }
 
-  async login(dto: LoginDto): Promise<AuthResult> {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email }, include: { marketProfile: true } });
-    if (!user || !user.passwordHash) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
+  private normalizeEmail(email: string): string {
+    return email.trim().toLowerCase();
+  }
 
-    const passwordValid = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!passwordValid) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
-
-    return this.buildAuthResult(user);
+  private hashCode(email: string, code: string): string {
+    const secret = this.config.get<string>('JWT_SECRET')!;
+    return createHmac('sha256', secret).update(`${email}:${code}`).digest('hex');
   }
 
   private buildAuthResult(user: {

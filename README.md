@@ -13,7 +13,7 @@ Market Brief, Ask the Market workspace, personalisation flow, and supporting API
 See `IMPLEMENTATION_STATUS.md` for the requirement-by-requirement gap assessment.
 
 - Monorepo (pnpm workspaces): NestJS API + Next.js web app
-- Auth: email/password registration & login with JWT (Google/Microsoft/
+- Auth: passwordless email-code login with a persistent JWT session (Google/Microsoft/
   LinkedIn OAuth are modeled in the schema but **not implemented** — no
   credentials were available; wiring them in is a small, isolated addition
   once you have OAuth app credentials for each provider)
@@ -58,6 +58,7 @@ cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
 # Get a free Alpha Vantage key at https://www.alphavantage.co/support/#api-key
 # and set ALPHA_VANTAGE_API_KEY in apps/api/.env to enable live commodity prices.
+# Set RESEND_API_KEY and AUTH_EMAIL_FROM to deliver passwordless login codes.
 
 # 4. Run database migrations
 pnpm prisma:migrate

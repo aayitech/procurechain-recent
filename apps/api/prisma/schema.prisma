@@ -32,6 +32,7 @@ model User {
   role          UserRole           @default(USER)
   provider      AuthProvider       @default(EMAIL)
   providerId    String?
+  emailVerifiedAt DateTime?
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   marketProfile UserMarketProfile?
@@ -39,6 +40,18 @@ model User {
   conversations Conversation[]
 
   @@index([email])
+}
+
+model PasswordlessLoginCode {
+  id         String    @id @default(cuid())
+  email      String    @unique
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([expiresAt])
 }
 
 model UserMarketProfile {

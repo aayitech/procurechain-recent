@@ -66,6 +66,10 @@ class EnvironmentVariables {
 
   @IsString()
   @IsOptional()
+  AUTH_EMAIL_FROM?: string;
+
+  @IsString()
+  @IsOptional()
   MARKET_BRIEF_REQUIRES_APPROVAL?: string;
 }
 
