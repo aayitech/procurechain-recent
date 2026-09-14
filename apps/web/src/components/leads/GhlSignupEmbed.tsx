@@ -15,11 +15,11 @@ export function GhlSignupEmbed({
   const formUrl = email ? `${GHL_SIGNUP_FORM_URL}?email=${encodeURIComponent(email)}` : GHL_SIGNUP_FORM_URL;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-border bg-[#0A0E14] shadow-sm">
       <iframe
         src={formUrl}
         title={title}
-        className="block min-h-[760px] w-full border-0 sm:min-h-[820px]"
+        className="mx-auto block min-h-[760px] w-full max-w-[760px] border-0 bg-[#0A0E14] sm:min-h-[820px]"
         loading="eager"
         allow="forms"
       />
