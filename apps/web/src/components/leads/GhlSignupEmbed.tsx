@@ -19,7 +19,7 @@ export function GhlSignupEmbed({
       <iframe
         src={formUrl}
         title={title}
-        className="mx-auto block min-h-[760px] w-full max-w-[760px] border-0 bg-[#0A0E14] sm:min-h-[820px]"
+        className="mx-auto block h-[980px] w-full max-w-[760px] border-0 bg-[#0A0E14] sm:h-[640px]"
         loading="eager"
         allow="forms"
       />
