@@ -68,6 +68,30 @@ pnpm dev:api   # http://localhost:4000 (Swagger docs at /docs)
 pnpm dev:web   # http://localhost:3000
 ```
 
+## GoHighLevel onboarding form
+
+New users verify their email first, then complete the embedded GHL form once.
+Existing database users are grandfathered by the onboarding migration and skip
+the form. After a successful submission, GHL must redirect the embedded form to:
+
+```text
+https://procurechain.online/onboarding/complete
+```
+
+Set that URL in the GHL form's **On Submit / Redirect URL** setting. Keep the
+form short and make email and industry required. The login email is supplied to
+the form as an `email` query parameter.
+
+The embedded GHL form submits directly to GHL, so it does not need an API key.
+The API credentials below are only needed by ProcureChain's separate background
+lead-sync service. Add them to the Railway variables for the
+`procurechain-recent` application service, not to the Postgres or Redis services:
+
+```text
+GOHIGHLEVEL_API_KEY=<GHL private integration token>
+GOHIGHLEVEL_LOCATION_ID=<GHL sub-account/location ID>
+```
+
 ## Architecture decisions worth knowing about
 
 - **Monorepo, not a single Next.js app.** The spec calls for a NestJS +

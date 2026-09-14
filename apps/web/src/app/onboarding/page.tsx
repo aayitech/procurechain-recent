@@ -12,10 +12,10 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (!hydrated) return;
     if (!user) router.replace('/login');
-    else if (user.onboardingCompletedAt) router.replace('/');
+    else if (user.onboardingCompletedAt !== null) router.replace('/');
   }, [hydrated, router, user]);
 
-  if (!hydrated || !user || user.onboardingCompletedAt) {
+  if (!hydrated || !user || user.onboardingCompletedAt !== null) {
     return <div className="container-page py-20 text-center text-sm text-ink-muted">Loading your profile…</div>;
   }
 
