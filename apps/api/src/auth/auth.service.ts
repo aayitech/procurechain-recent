@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { createHmac, randomInt, timingSafeEqual } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { GoHighLevelClient } from '../leads/gohighlevel.client';
 import { AuthEmailService } from './auth-email.service';
 import { RequestLoginCodeDto } from './dto/request-login-code.dto';
 import { VerifyLoginCodeDto } from './dto/verify-login-code.dto';
@@ -50,6 +51,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly email: AuthEmailService,
+    private readonly goHighLevel: GoHighLevelClient,
   ) {}
 
   async requestLoginCode(dto: RequestLoginCodeDto): Promise<LoginCodeRequestedResult> {
@@ -136,12 +138,46 @@ export class AuthService {
   }
 
   async completeOnboarding(userId: string): Promise<AuthResult['user']> {
+    const currentUser = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    const profile = await this.getSubmittedGhlProfile(currentUser.email);
+
     const user = await this.prisma.user.update({
       where: { id: userId },
-      data: { onboardingCompletedAt: new Date() },
+      data: {
+        onboardingCompletedAt: new Date(),
+        firstName: profile?.firstName,
+        lastName: profile?.lastName,
+        company: profile?.company,
+        country: profile?.country,
+        industry: profile?.industry,
+        jobTitle: profile?.jobTitle,
+      },
       include: { marketProfile: true },
     });
     return this.buildUser(user);
+  }
+
+  private async getSubmittedGhlProfile(email: string) {
+    if (!this.goHighLevel.isConfigured()) return null;
+
+    // The form redirect can arrive just before GHL's contact index updates.
+    // Retry briefly so the dashboard receives the submitted profile reliably.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const profile = await this.goHighLevel.getContactProfileByEmail(email);
+      if (profile?.industry) return profile;
+      if (profile) {
+        throw new HttpException(
+          'Industry could not be read from GHL. Enable the View Custom Fields permission for the private integration.',
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
+      }
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+    }
+
+    throw new HttpException(
+      'Your GHL profile is still being processed. Please refresh in a moment.',
+      HttpStatus.SERVICE_UNAVAILABLE,
+    );
   }
 
   private normalizeEmail(email: string): string {

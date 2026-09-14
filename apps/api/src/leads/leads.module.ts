@@ -11,6 +11,6 @@ import { LEAD_SYNC_QUEUE } from './leads.constants';
   imports: [BullModule.registerQueue({ name: LEAD_SYNC_QUEUE }), EngagementModule],
   controllers: [LeadsController],
   providers: [LeadsService, LeadsProcessor, GoHighLevelClient],
-  exports: [LeadsService],
+  exports: [LeadsService, GoHighLevelClient],
 })
 export class LeadsModule {}
