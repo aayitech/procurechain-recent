@@ -9,6 +9,8 @@ import { WorldBankProvider } from './providers/world-bank.provider';
 import { FredProvider } from './providers/fred.provider';
 import { ImfProvider } from './providers/imf.provider';
 import { EiaProvider } from './providers/eia.provider';
+import { SarbProvider } from './providers/sarb.provider';
+import { UnComtradeProvider } from './providers/un-comtrade.provider';
 import { computeChangeStats, toCsv, type IndicatorFrequency } from './market-data.utils';
 import { DATA_SOURCE_REGISTRY, sourceUrlFor, type DataSourceRegistryEntry } from './source-registry';
 
@@ -95,6 +97,8 @@ export class MarketDataService implements OnApplicationBootstrap {
     private readonly fred: FredProvider,
     private readonly imf: ImfProvider,
     private readonly eia: EiaProvider,
+    private readonly sarb: SarbProvider,
+    private readonly unComtrade: UnComtradeProvider,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {}
 
@@ -116,9 +120,15 @@ export class MarketDataService implements OnApplicationBootstrap {
       this.refreshFredIndicators(),
       this.refreshImfIndicators(),
       this.refreshEiaEnergy(),
+      this.refreshUnComtrade(),
     ]);
 
-    const rejected = coreResults.filter((result) => result.status === 'rejected').length;
+    // SARB is the authoritative source for South African rates. Run it after
+    // the global feeds so matching ZAR observations retain their official
+    // SARB attribution.
+    const sarbResult = await Promise.allSettled([this.refreshSarbData()]);
+
+    const rejected = [...coreResults, ...sarbResult].filter((result) => result.status === 'rejected').length;
     if (rejected > 0) {
       this.logger.warn(`${reason} market-data refresh finished with ${rejected} rejected task(s)`);
     } else {
@@ -130,6 +140,68 @@ export class MarketDataService implements OnApplicationBootstrap {
     if (this.commodities.isConfigured()) {
       void this.refreshCommodities();
     }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_5AM)
+  async refreshUnComtrade(): Promise<void> {
+    const seriesList = await this.unComtrade.fetchAllSeries();
+    for (const series of seriesList) {
+      const record = await this.prisma.commodity.upsert({
+        where: { symbol: series.symbol },
+        update: { name: series.name, unit: series.unit, category: series.category, frequency: 'annual' },
+        create: { symbol: series.symbol, name: series.name, unit: series.unit, category: series.category, frequency: 'annual' },
+      });
+      for (const point of series.points) {
+        await this.prisma.commodityPrice.upsert({
+          where: { commodityId_asOf: { commodityId: record.id, asOf: point.asOf } },
+          update: { price: point.price, source: series.source },
+          create: { commodityId: record.id, price: point.price, asOf: point.asOf, source: series.source },
+        });
+      }
+    }
+    await this.redis.del(DASHBOARD_CACHE_KEY);
+    this.logger.log(`UN Comtrade refresh complete: ${seriesList.length} South African trade series`);
+  }
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async refreshSarbData(): Promise<void> {
+    const [fxSeries, indicatorSeries] = await Promise.all([
+      this.sarb.fetchFxSeries(),
+      this.sarb.fetchIndicatorSeries(),
+    ]);
+
+    for (const series of fxSeries) {
+      await this.prisma.currency.upsert({
+        where: { code: series.quoteCode },
+        update: {},
+        create: { code: series.quoteCode, name: series.quoteCode },
+      });
+      for (const point of series.points) {
+        await this.prisma.exchangeRate.upsert({
+          where: { baseCode_quoteCode_asOf: { baseCode: series.baseCode, quoteCode: series.quoteCode, asOf: point.asOf } },
+          update: { rate: point.rate, source: series.source },
+          create: { baseCode: series.baseCode, quoteCode: series.quoteCode, rate: point.rate, asOf: point.asOf, source: series.source },
+        });
+      }
+    }
+
+    for (const series of indicatorSeries) {
+      const record = await this.prisma.commodity.upsert({
+        where: { symbol: series.symbol },
+        update: { name: series.name, unit: series.unit, category: series.category, frequency: series.frequency },
+        create: { symbol: series.symbol, name: series.name, unit: series.unit, category: series.category, frequency: series.frequency },
+      });
+      for (const point of series.points) {
+        await this.prisma.commodityPrice.upsert({
+          where: { commodityId_asOf: { commodityId: record.id, asOf: point.asOf } },
+          update: { price: point.price, source: series.source },
+          create: { commodityId: record.id, price: point.price, asOf: point.asOf, source: series.source },
+        });
+      }
+    }
+
+    await this.redis.del(DASHBOARD_CACHE_KEY);
+    this.logger.log(`SARB refresh complete: ${fxSeries.length} FX and ${indicatorSeries.length} economic series`);
   }
 
   @Cron(CronExpression.EVERY_6_HOURS)

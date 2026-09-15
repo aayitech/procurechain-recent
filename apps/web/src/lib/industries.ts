@@ -4,7 +4,7 @@
 export const INDUSTRY_TO_CATEGORIES: Record<string, string[]> = {
   'Mining & Metals': ['Metals', 'Fuel & Energy', 'Logistics & Freight'],
   'Oil & Gas': ['Fuel & Energy', 'Chemicals', 'Logistics & Freight'],
-  Construction: ['Construction Materials', 'Metals', 'Fuel & Energy'],
+  Construction: ['Construction Materials', 'Metals', 'Fuel & Energy', 'Economic Indicators'],
   Manufacturing: ['Metals', 'Chemicals', 'Plastics', 'Fuel & Energy'],
   'Agriculture & Agro-processing': ['Agriculture', 'Chemicals', 'Fuel & Energy'],
   'Energy & Utilities': ['Fuel & Energy', 'Metals'],
@@ -16,8 +16,8 @@ export const INDUSTRY_TO_CATEGORIES: Record<string, string[]> = {
   'Transport & Logistics': ['Logistics & Freight', 'Fuel & Energy'],
   Chemicals: ['Chemicals', 'Fuel & Energy'],
   Packaging: ['Packaging', 'Paper', 'Plastics'],
-  'Government & Public Sector': [],
-  'Financial Services': [],
+  'Government & Public Sector': ['Economic Indicators', 'Trade', 'fx'],
+  'Financial Services': ['Economic Indicators', 'Trade', 'fx'],
   Technology: [],
   Other: [],
 };

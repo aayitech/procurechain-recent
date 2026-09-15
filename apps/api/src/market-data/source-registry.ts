@@ -31,6 +31,8 @@ export const SOURCE_NAMES = {
   frankfurter: 'frankfurter.dev (ECB reference rates)',
   alphaVantage: 'Alpha Vantage',
   eia: 'U.S. Energy Information Administration',
+  sarb: 'South African Reserve Bank',
+  unComtrade: 'UN Comtrade',
 } as const;
 
 export const DATA_SOURCE_REGISTRY: DataSourceRegistryEntry[] = [
@@ -165,9 +167,9 @@ export const DATA_SOURCE_REGISTRY: DataSourceRegistryEntry[] = [
     ['za-dmre', 'South African Department of Mineral Resources and Energy', 'gov.za', ['official South African fuel prices', 'fuel adjustments'], 'https://www.gov.za/about-sa/minerals', false],
     ['za-cef', 'Central Energy Fund', 'cefgroup.co.za', ['South African fuel price mechanism', 'fuel components'], 'https://www.cefgroup.co.za/', false],
     ['stats-sa', 'Statistics South Africa', 'statssa.gov.za', ['CPI', 'PPI', 'GDP', 'manufacturing', 'employment', 'trade'], 'https://www.statssa.gov.za/', false],
-    ['sarb', 'South African Reserve Bank', 'resbank.co.za', ['interest rates', 'exchange rates', 'monetary indicators'], 'https://www.resbank.co.za/', false],
+    ['sarb', SOURCE_NAMES.sarb, 'resbank.co.za', ['interest rates', 'exchange rates', 'monetary indicators'], 'https://custom.resbank.co.za/SarbWebApi/swagger/index.html', false],
     ['eurostat', 'Eurostat', 'ec.europa.eu/eurostat', ['European inflation', 'production', 'trade', 'energy'], 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/', false],
-    ['un-comtrade', 'UN Comtrade', 'comtradeplus.un.org', ['imports', 'exports', 'HS code trade'], 'https://comtradeapi.un.org/', false],
+    ['un-comtrade', SOURCE_NAMES.unComtrade, 'comtradeplus.un.org', ['imports', 'exports', 'HS code trade'], 'https://comtradeapi.un.org/', false],
     ['world-bank-wits', 'World Bank WITS', 'wits.worldbank.org', ['trade', 'tariffs', 'partners', 'products'], 'https://wits.worldbank.org/', false],
     ['wto-data', 'WTO Data', 'data.wto.org', ['merchandise trade', 'tariffs', 'market access'], 'https://api.wto.org/', true],
     ['fao', 'Food and Agriculture Organization', 'fao.org', ['agriculture', 'food prices', 'production'], 'https://fenixservices.fao.org/', false],
@@ -196,7 +198,7 @@ export const DATA_SOURCE_REGISTRY: DataSourceRegistryEntry[] = [
     redistributionAllowed: 'terms_review_required' as LicenceReview,
     attributionRequired: true,
     licence: 'Provider terms and intended commercial use must be approved before activation',
-    status: sourceId === 'eia' ? 'configuration_required' as SourceAvailability : 'planned' as SourceAvailability,
+    status: sourceId === 'sarb' || sourceId === 'un-comtrade' ? 'active' as SourceAvailability : sourceId === 'eia' ? 'configuration_required' as SourceAvailability : 'planned' as SourceAvailability,
     lastSuccessfulFetch: null,
     lastFailedFetch: null,
     lastDataTimestamp: null,
