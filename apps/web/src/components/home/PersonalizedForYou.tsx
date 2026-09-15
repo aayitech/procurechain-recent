@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
 import { useCommodityList } from '@/hooks/useMarketIntelligence';
-import { INDUSTRY_TO_CATEGORIES } from '@/lib/industries';
+import { resolveIndustryCategories } from '@/lib/industries';
 import { ChangeBadge } from '@/components/market-intelligence/ChangeBadge';
 
 export function PersonalizedForYou() {
@@ -12,7 +12,7 @@ export function PersonalizedForYou() {
 
   if (!user || !user.industry) return null;
 
-  const relevantCategories = INDUSTRY_TO_CATEGORIES[user.industry] ?? [];
+  const relevantCategories = resolveIndustryCategories(user.industry);
   const relevant = (commodities ?? []).filter((c) => relevantCategories.includes(c.category));
 
   if (relevant.length === 0) return null;

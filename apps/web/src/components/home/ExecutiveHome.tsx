@@ -8,6 +8,7 @@ import { useNews } from '@/hooks/useNews';
 import { useAuthStore } from '@/store/auth-store';
 import { Sparkline } from '@/components/shared/Sparkline';
 import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
+import { resolveIndustryCategories } from '@/lib/industries';
 
 type Signal = { id: string; kind: 'commodity' | 'fx'; label: string; value: number; currency: string; unit: string; change: number | null; history: Array<{ asOf: string; price: number }>; href: string; category: string };
 const categoryMeta: Record<string, { label: string; icon: typeof Droplets }> = {
@@ -21,15 +22,16 @@ export function ExecutiveHome() {
   const { data: news } = useNews();
   const user = useAuthStore((state) => state.user);
   const { currencyCode, convert } = useCurrencyConversion();
+  const industryCategories = useMemo(() => resolveIndustryCategories(user?.industry), [user?.industry]);
   const signals = useMemo<Signal[]>(() => {
     if (!data) return [];
-    const priorities = [...(user?.marketProfile?.commodities ?? []), ...(user?.marketProfile?.procurementCategories ?? []), ...(user?.country === 'South Africa' ? ['diesel', 'steel', 'polyethylene', 'usd/zar', 'freight'] : [])].map((item) => item.toLowerCase());
+    const priorities = [...(user?.marketProfile?.commodities ?? []), ...(user?.marketProfile?.procurementCategories ?? []), ...industryCategories, ...(user?.country === 'South Africa' ? ['diesel', 'steel', 'polyethylene', 'usd/zar', 'freight'] : [])].map((item) => item.toLowerCase());
     const relevance = (item: Signal) => priorities.some((priority) => `${item.label} ${item.category}`.toLowerCase().includes(priority)) ? 1 : 0;
     return [
       ...data.commodities.map((item) => ({ id: item.symbol, kind: 'commodity' as const, label: item.name, value: item.latestPrice, currency: item.currency, unit: item.unit, change: item.change30d, history: item.sparkline, href: `/market-intelligence?instrument=${encodeURIComponent(`commodity:${item.symbol}`)}`, category: item.category })),
       ...data.fx.map((item) => ({ id: `${item.baseCode}-${item.quoteCode}`, kind: 'fx' as const, label: `${item.baseCode}/${item.quoteCode}`, value: item.latestRate, currency: item.quoteCode, unit: `per ${item.baseCode}`, change: item.change30d, history: item.sparkline, href: `/market-intelligence?instrument=${encodeURIComponent(`fx:${item.baseCode}:${item.quoteCode}`)}`, category: 'fx' })),
     ].filter((item) => Number.isFinite(item.value)).sort((a, b) => relevance(b) - relevance(a) || Math.abs(b.change ?? 0) - Math.abs(a.change ?? 0));
-  }, [data, user]);
+  }, [data, industryCategories, user]);
   const displaySignals = useMemo(() => signals.map((item) => {
     if (item.kind === 'fx') return item;
     const converted = convert(item.value, item.currency);
@@ -40,6 +42,10 @@ export function ExecutiveHome() {
     displaySignals.forEach((item) => counts.set(item.category, (counts.get(item.category) ?? 0) + 1));
     return Array.from(counts.entries()).map(([key, count]) => ({ key, count, ...(categoryMeta[key] ?? { label: key.replaceAll('_', ' '), icon: Package }) })).sort((a, b) => b.count - a.count);
   }, [displaySignals]);
+  const trackedIndustryCategories = useMemo(() => {
+    const liveCategories = new Set(displaySignals.map((item) => item.category.toLowerCase()));
+    return industryCategories.filter((category) => liveCategories.has(category.toLowerCase()));
+  }, [displaySignals, industryCategories]);
   const stories = (news ?? []).filter((story) => story.title && story.link).slice(0, 3);
   const heroImage = stories.find((story) => story.imageUrl)?.imageUrl;
   const greeting = user?.firstName?.trim() ? `Good morning, ${user.firstName.trim()}.` : 'Market intelligence, at a glance.';
@@ -57,9 +63,9 @@ export function ExecutiveHome() {
     </section>
     <div id="dashboard" className="container-page space-y-8 py-8">
       {isLoading && <div className="flex h-24 items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 px-5 text-sm text-slate-400"><Activity className="h-5 w-5 animate-pulse text-blue-400" />Loading verified market coverage…</div>}
-      {!isLoading && <section aria-label="Personal market overview" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {!isLoading && <section aria-label="Personal market overview" className={`grid gap-3 sm:grid-cols-2 ${trackedIndustryCategories.length > 0 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
         <OverviewStat icon={MapPin} label="Your market" value={user?.country || 'Global'} detail={user?.marketProfile?.currency || 'Market currency'} />
-        <OverviewStat icon={Factory} label="Your industry" value={user?.industry || 'General procurement'} detail={`${user?.marketProfile?.procurementCategories?.length ?? 0} tracked categories`} />
+        {trackedIndustryCategories.length > 0 && <OverviewStat icon={Factory} label="Your industry" value={user?.industry ?? ''} detail={`${trackedIndustryCategories.length} tracked ${trackedIndustryCategories.length === 1 ? 'category' : 'categories'}`} />}
         <OverviewStat icon={Activity} label="Market coverage" value={`${displaySignals.length} live`} detail="Verified instruments" />
         <OverviewStat icon={CheckCircle2} label="Data status" value="Verified sources" detail="No estimated market values" positive />
       </section>}
