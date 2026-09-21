@@ -4,9 +4,11 @@ export interface AuthUser {
   firstName: string | null;
   lastName: string | null;
   company: string | null;
+  phone: string | null;
   country: string | null;
   industry: string | null;
   jobTitle: string | null;
+  newsletterOptIn: boolean;
   role: string;
   onboardingCompletedAt: string | null;
   marketProfile: {

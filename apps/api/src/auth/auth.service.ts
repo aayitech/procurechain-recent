@@ -20,9 +20,11 @@ export interface AuthResult {
     firstName: string | null;
     lastName: string | null;
     company: string | null;
+    phone: string | null;
     country: string | null;
     industry: string | null;
     jobTitle: string | null;
+    newsletterOptIn: boolean;
     role: string;
     onboardingCompletedAt: Date | null;
     marketProfile: {
@@ -140,17 +142,34 @@ export class AuthService {
   async completeOnboarding(userId: string): Promise<AuthResult['user']> {
     const currentUser = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
     const profile = await this.getSubmittedGhlProfile(currentUser.email);
-
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: {
         onboardingCompletedAt: new Date(),
-        firstName: profile?.firstName,
-        lastName: profile?.lastName,
-        company: profile?.company,
-        country: profile?.country,
-        industry: profile?.industry,
-        jobTitle: profile?.jobTitle,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        company: profile.company,
+        phone: profile.phone,
+        country: profile.country,
+        industry: profile.industry,
+        jobTitle: profile.jobTitle,
+        newsletterOptIn: true,
+        marketProfile: {
+          upsert: {
+            create: {
+              regionCity: profile.regionCity,
+              currency: profile.preferredCurrency,
+              procurementCategories: profile.procurementInterests,
+              commodities: profile.commodityInterests,
+            },
+            update: {
+              regionCity: profile.regionCity,
+              currency: profile.preferredCurrency,
+              procurementCategories: profile.procurementInterests,
+              commodities: profile.commodityInterests,
+            },
+          },
+        },
       },
       include: { marketProfile: true },
     });
@@ -158,16 +177,18 @@ export class AuthService {
   }
 
   private async getSubmittedGhlProfile(email: string) {
-    if (!this.goHighLevel.isConfigured()) return null;
+    if (!this.goHighLevel.isConfigured()) {
+      throw new HttpException('Signup profile integration is not configured', HttpStatus.SERVICE_UNAVAILABLE);
+    }
 
-    // The form redirect can arrive just before GHL's contact index updates.
-    // Retry briefly so the dashboard receives the submitted profile reliably.
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const profile = await this.goHighLevel.getContactProfileByEmail(email);
-      if (profile?.industry) return profile;
-      if (profile) {
+      if (profile?.industry && profile.preferredCurrency && profile.procurementInterests.length > 0 && profile.commodityInterests.length > 0) {
+        return profile;
+      }
+      if (attempt === 2 && profile) {
         throw new HttpException(
-          'Industry could not be read from GHL. Enable the View Custom Fields permission for the private integration.',
+          'Your signup profile is incomplete or its custom fields cannot be read yet. Please check the required fields and refresh.',
           HttpStatus.SERVICE_UNAVAILABLE,
         );
       }
@@ -175,7 +196,7 @@ export class AuthService {
     }
 
     throw new HttpException(
-      'Your GHL profile is still being processed. Please refresh in a moment.',
+      'Your signup profile is still being processed. Please refresh in a moment.',
       HttpStatus.SERVICE_UNAVAILABLE,
     );
   }
@@ -195,9 +216,11 @@ export class AuthService {
     firstName: string | null;
     lastName: string | null;
     company: string | null;
+    phone: string | null;
     country: string | null;
     industry: string | null;
     jobTitle: string | null;
+    newsletterOptIn: boolean;
     role: string;
     onboardingCompletedAt: Date | null;
     marketProfile: AuthResult['user']['marketProfile'];
@@ -215,9 +238,11 @@ export class AuthService {
     firstName: string | null;
     lastName: string | null;
     company: string | null;
+    phone: string | null;
     country: string | null;
     industry: string | null;
     jobTitle: string | null;
+    newsletterOptIn: boolean;
     role: string;
     onboardingCompletedAt: Date | null;
     marketProfile: AuthResult['user']['marketProfile'];
@@ -228,9 +253,11 @@ export class AuthService {
       firstName: user.firstName,
       lastName: user.lastName,
       company: user.company,
+      phone: user.phone,
       country: user.country,
       industry: user.industry,
       jobTitle: user.jobTitle,
+      newsletterOptIn: user.newsletterOptIn,
       role: user.role,
       onboardingCompletedAt: user.onboardingCompletedAt,
       marketProfile: user.marketProfile,

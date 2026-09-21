@@ -68,29 +68,20 @@ pnpm dev:api   # http://localhost:4000 (Swagger docs at /docs)
 pnpm dev:web   # http://localhost:3000
 ```
 
-## GoHighLevel onboarding form
+## Signup profile and personalization
 
-New users verify their email first, then complete the embedded GHL form once.
-Existing database users are grandfathered by the onboarding migration and skip
-the form. After a successful submission, GHL must redirect the embedded form to:
+New users verify their email and complete the embedded signup form. After its
+redirect to `/onboarding/complete`, the ProcureChain API reads the submitted
+profile and saves identity, phone, location, preferred currency, industry,
+procurement interests, commodity interests, and newsletter consent to Postgres.
+The dashboard and Market Brief rank verified signals and news using that stored
+profile. The form configuration itself is managed separately from this codebase.
 
-```text
-https://procurechain.online/onboarding/complete
-```
-
-Set that URL in the GHL form's **On Submit / Redirect URL** setting. Keep the
-form short and make email and industry required. The login email is supplied to
-the form as an `email` query parameter.
-
-The embedded GHL form submits directly to GHL, so it does not need an API key.
-The API credentials below are only needed by ProcureChain's separate background
-lead-sync service. Add them to the Railway variables for the
-`procurechain-recent` application service, not to the Postgres or Redis services:
-
-```text
-GOHIGHLEVEL_API_KEY=<GHL private integration token>
-GOHIGHLEVEL_LOCATION_ID=<GHL sub-account/location ID>
-```
+The form should redirect to `https://procurechain.online/onboarding/complete`.
+The API service needs `GOHIGHLEVEL_API_KEY` and `GOHIGHLEVEL_LOCATION_ID`, with
+permission to read contacts and custom-field definitions. The integration accepts
+the field labels shown in the signup form as well as their standard `contact.*`
+keys, including Preferred Currency, Procurement Interests, and Commodity Interests.
 
 ## Architecture decisions worth knowing about
 

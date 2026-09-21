@@ -3,6 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import type { Lead } from '@prisma/client';
 
 const GHL_CONTACTS_ENDPOINT = 'https://services.leadconnectorhq.com/contacts/';
+const COUNTRY_NAMES: Record<string, string> = {
+  ZA: 'South Africa', NG: 'Nigeria', KE: 'Kenya', EG: 'Egypt', GH: 'Ghana',
+  GB: 'United Kingdom', UK: 'United Kingdom', US: 'United States', CN: 'China',
+  CG: 'Republic of Congo', CD: 'Democratic Republic of the Congo',
+  AO: 'Angola', NA: 'Namibia', BW: 'Botswana', ZM: 'Zambia',
+};
 
 export interface GhlSyncResult {
   synced: boolean;
@@ -13,9 +19,14 @@ export interface GhlContactProfile {
   firstName?: string;
   lastName?: string;
   company?: string;
+  phone?: string;
   country?: string;
   industry?: string;
   jobTitle?: string;
+  regionCity?: string;
+  preferredCurrency?: string;
+  procurementInterests: string[];
+  commodityInterests: string[];
 }
 
 interface GhlCustomFieldValue {
@@ -31,6 +42,7 @@ interface GhlContact {
   firstName?: string;
   lastName?: string;
   companyName?: string;
+  phone?: string;
   country?: string;
   jobTitle?: string;
   customFields?: GhlCustomFieldValue[];
@@ -142,11 +154,32 @@ export class GoHighLevelClient {
       firstName: this.clean(contact.firstName),
       lastName: this.clean(contact.lastName),
       company: this.clean(contact.companyName),
-      country: this.clean(contact.country),
+      phone: this.clean(contact.phone),
+      country: this.normalizeCountry(contact.country),
       industry: this.findCustomValue(customValues, ['contact.industry_1', 'contact.industry'], ['industry']),
       jobTitle:
         this.clean(contact.jobTitle) ??
         this.findCustomValue(customValues, ['contact.job_title', 'contact.jobtitle'], ['job title', 'jobtitle']),
+      regionCity: this.findCustomValue(
+        customValues,
+        ['contact.region_state_province', 'contact.region', 'contact.state_province'],
+        ['region / state / province', 'region', 'state / province'],
+      ),
+      preferredCurrency: this.normalizeCurrency(this.findCustomValue(
+        customValues,
+        ['contact.preferred_currency', 'contact.currency'],
+        ['preferred currency', 'currency'],
+      )),
+      procurementInterests: this.findCustomList(
+        customValues,
+        ['contact.procurement_interests', 'contact.procurement_interest'],
+        ['procurement interests', 'procurement interest'],
+      ),
+      commodityInterests: this.findCustomList(
+        customValues,
+        ['contact.commodity_interests', 'contact.commodity_interest'],
+        ['commodity interests', 'commodity interest'],
+      ),
     };
   }
 
@@ -177,15 +210,15 @@ export class GoHighLevelClient {
   private customFieldValues(
     values: GhlCustomFieldValue[] | undefined,
     definitions: GhlCustomFieldDefinition[],
-  ): Array<{ key: string; name: string; value: string }> {
+  ): Array<{ key: string; name: string; value: unknown }> {
     const definitionsById = new Map(
       definitions.filter((field) => field.id).map((field) => [field.id!, field]),
     );
 
     return (values ?? []).flatMap((field) => {
       const definition = field.id ? definitionsById.get(field.id) : undefined;
-      const value = this.clean(field.fieldValue ?? field.value);
-      if (!value) return [];
+      const value = field.fieldValue ?? field.value;
+      if (value === undefined || value === null || value === '') return [];
       return [{
         key: (field.key ?? field.fieldKey ?? definition?.fieldKey ?? '').toLowerCase(),
         name: (definition?.name ?? '').toLowerCase(),
@@ -195,17 +228,63 @@ export class GoHighLevelClient {
   }
 
   private findCustomValue(
-    values: Array<{ key: string; name: string; value: string }>,
+    values: Array<{ key: string; name: string; value: unknown }>,
     keys: string[],
     names: string[],
   ): string | undefined {
     const normalizedKeys = keys.map((key) => key.toLowerCase());
     const normalizedNames = names.map((name) => name.toLowerCase());
-    return values.find(
+    const match = values.find(
       (field) =>
         normalizedKeys.includes(field.key) ||
         normalizedNames.some((name) => field.name === name || field.name.startsWith(`${name} `)),
-    )?.value;
+    );
+    return this.clean(Array.isArray(match?.value) ? match?.value[0] : match?.value);
+  }
+
+  private findCustomList(
+    values: Array<{ key: string; name: string; value: unknown }>,
+    keys: string[],
+    names: string[],
+  ): string[] {
+    const normalizedKeys = keys.map((key) => key.toLowerCase());
+    const normalizedNames = names.map((name) => name.toLowerCase());
+    const match = values.find(
+      (field) =>
+        normalizedKeys.includes(field.key) ||
+        normalizedNames.some((name) => field.name === name || field.name.startsWith(`${name} `)),
+    );
+    if (!match) return [];
+
+    const rawValues = Array.isArray(match.value) ? match.value : [match.value];
+    return [...new Set(rawValues.flatMap((value) => {
+      const cleaned = this.clean(value);
+      if (!cleaned) return [];
+      const json = this.parseStringArray(cleaned);
+      return json ?? cleaned.split(/[,;|\n]+/);
+    }).map((value) => value.trim()).filter(Boolean))];
+  }
+
+  private parseStringArray(value: string): string[] | null {
+    if (!value.startsWith('[')) return null;
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private normalizeCurrency(value: string | undefined): string | undefined {
+    if (!value) return undefined;
+    const match = /\b(USD|EUR|GBP|ZAR|NGN|KES|EGP|GHS|CNY)\b/i.exec(value);
+    return match?.[1].toUpperCase();
+  }
+
+  private normalizeCountry(value: unknown): string | undefined {
+    const country = this.clean(value);
+    if (!country) return undefined;
+    return COUNTRY_NAMES[country.toUpperCase()] ?? country;
   }
 
   private clean(value: unknown): string | undefined {

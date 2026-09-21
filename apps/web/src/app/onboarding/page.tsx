@@ -33,7 +33,7 @@ export default function OnboardingPage() {
         </div>
 
         <p className="mt-4 text-center text-xs leading-5 text-ink-muted">
-          Submit this form once. You will then continue automatically to your dashboard.
+          Submit this form once. You will then continue automatically to your personalized Market Brief.
         </p>
       </div>
     </div>

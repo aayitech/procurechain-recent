@@ -26,9 +26,11 @@ model User {
   firstName     String?
   lastName      String?
   company       String?
+  phone         String?
   country       String?
   industry      String?
   jobTitle      String?
+  newsletterOptIn Boolean          @default(true)
   role          UserRole           @default(USER)
   provider      AuthProvider       @default(EMAIL)
   providerId    String?

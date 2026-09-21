@@ -8,7 +8,7 @@ import { useMarketDashboard } from '@/hooks/useMarketDashboard';
 import { useNews } from '@/hooks/useNews';
 import { useAuthStore } from '@/store/auth-store';
 import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
-import { resolveIndustryCategories } from '@/lib/industries';
+import { profileKeywords, profileRelevance } from '@/lib/profile-personalization';
 
 type BriefSignal = { key: string; name: string; category: string; value: number; currency: string; unit: string; change7d: number | null; change30d: number | null; history: Array<{ asOf: string; price: number }>; href: string; source: string; asOf: string };
 const formatValue = (amount: number) => new Intl.NumberFormat('en-ZA', { maximumFractionDigits: amount >= 100 ? 0 : 2 }).format(amount);
@@ -18,17 +18,16 @@ export function VisualMarketBrief() {
   const { data: news } = useNews();
   const user = useAuthStore((state) => state.user);
   const { currencyCode, convert } = useCurrencyConversion();
-  const industryCategories = useMemo(() => resolveIndustryCategories(user?.industry), [user?.industry]);
+  const personalizationKeywords = useMemo(() => profileKeywords(user), [user]);
   const signals = useMemo<BriefSignal[]>(() => {
     if (!data) return [];
-    const priorities = [...(user?.marketProfile?.commodities ?? []), ...(user?.marketProfile?.procurementCategories ?? []), ...industryCategories, ...(user?.country === 'South Africa' ? ['diesel', 'steel', 'polyethylene', 'usd/zar', 'freight'] : [])].map((item) => item.toLowerCase());
-    const relevance = (item: BriefSignal) => priorities.some((priority) => `${item.name} ${item.category}`.toLowerCase().includes(priority)) ? 1 : 0;
+    const relevance = (item: BriefSignal) => profileRelevance(`${item.name} ${item.category}`, personalizationKeywords);
     return [
       ...data.commodities.map((item) => { const converted = convert(item.latestPrice, item.currency); return { key: item.symbol, name: item.name, category: item.category, value: converted.amount, currency: converted.currencyCode, unit: item.unit, change7d: item.change7d, change30d: item.change30d, history: item.sparkline, href: `/market-intelligence?instrument=${encodeURIComponent(`commodity:${item.symbol}`)}`, source: item.source, asOf: item.asOf }; }),
       ...data.fx.map((item) => ({ key: `${item.baseCode}/${item.quoteCode}`, name: `${item.baseCode}/${item.quoteCode}`, category: 'fx', value: item.latestRate, currency: item.quoteCode, unit: `per ${item.baseCode}`, change7d: item.change7d, change30d: item.change30d, history: item.sparkline, href: `/market-intelligence?instrument=${encodeURIComponent(`fx:${item.baseCode}:${item.quoteCode}`)}`, source: item.source, asOf: item.asOf })),
     ].filter((item) => Number.isFinite(item.value)).sort((a, b) => relevance(b) - relevance(a) || Math.abs(b.change7d ?? 0) - Math.abs(a.change7d ?? 0));
-  }, [convert, currencyCode, data, industryCategories, user]);
-  const stories = (news ?? []).filter((story) => story.title && story.link).slice(0, 4);
+  }, [convert, currencyCode, data, personalizationKeywords]);
+  const stories = useMemo(() => (news ?? []).filter((story) => story.title && story.link).map((story, index) => ({ story, index, score: profileRelevance(`${story.title} ${story.description}`, personalizationKeywords) })).sort((a, b) => b.score - a.score || a.index - b.index).slice(0, 4).map(({ story }) => story), [news, personalizationKeywords]);
   const heroImage = stories.find((story) => story.imageUrl)?.imageUrl;
   const date = new Intl.DateTimeFormat('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
   const greeting = user?.firstName ? `Good morning, ${user.firstName}.` : 'Your procurement market brief';
