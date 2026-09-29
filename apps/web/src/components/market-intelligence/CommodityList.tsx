@@ -6,6 +6,7 @@ import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
 import { ChangeBadge } from './ChangeBadge';
 import { CATEGORY_ORDER } from '@/lib/commodity-categories';
 import type { CommodityListEntry } from '@/types/market-data';
+import { isMonetaryMarketValue } from '@/lib/market-value';
 
 function CategorySummary({ entries }: { entries: CommodityListEntry[] }) {
   const changes = entries.map((e) => e.change7d).filter((v): v is number => v !== null);
@@ -68,7 +69,8 @@ export function CommodityList() {
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {entries.map((entry) => {
-                const converted = convert(entry.latestPrice);
+                const monetary = isMonetaryMarketValue(entry);
+                const converted = monetary ? convert(entry.latestPrice, entry.currency) : null;
                 return (
                   <Link
                     key={entry.symbol}
@@ -77,14 +79,14 @@ export function CommodityList() {
                   >
                     <h4 className="text-base font-semibold text-ink">{entry.name}</h4>
                     <p className="mt-2 font-mono text-2xl text-ink">
-                      {entry.latestPrice.toFixed(2)} <span className="text-xs text-ink-faint">{entry.currency}</span>
+                      {entry.latestPrice.toFixed(2)} <span className="text-xs text-ink-faint">{monetary ? entry.currency : entry.unit}</span>
                     </p>
-                    {!converted.isUsd && (
+                    {converted && !converted.isUsd && (
                       <p className="font-mono text-sm text-ink-muted">
                         ≈ {converted.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })} {converted.currencyCode}
                       </p>
                     )}
-                    <p className="text-xs text-ink-faint">{entry.unit}</p>
+                    {monetary && <p className="text-xs text-ink-faint">{entry.unit}</p>}
                     <div className="mt-3 flex gap-4">
                       <ChangeBadge value={entry.change7d} label={entry.periodShortLabel} />
                       {entry.periodLongLabel && <ChangeBadge value={entry.change30d} label={entry.periodLongLabel} />}

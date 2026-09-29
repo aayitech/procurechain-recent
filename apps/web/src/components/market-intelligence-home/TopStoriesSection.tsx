@@ -29,7 +29,7 @@ export function TopStoriesSection({ stories }: { stories: TopStory[] }) {
             <div className="relative">
               {story.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={story.imageUrl} alt="" className="h-28 w-full object-cover" loading="lazy" />
+                <img src={story.imageUrl} alt={story.title} className="h-28 w-full bg-canvas-overlay object-contain" loading="lazy" />
               ) : (
                 <div className="h-28 w-full bg-canvas-overlay" />
               )}

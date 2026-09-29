@@ -70,18 +70,19 @@ pnpm dev:web   # http://localhost:3000
 
 ## Signup profile and personalization
 
-New users verify their email and complete the embedded signup form. After its
-redirect to `/onboarding/complete`, the ProcureChain API reads the submitted
-profile and saves identity, phone, location, preferred currency, industry,
-procurement interests, commodity interests, and newsletter consent to Postgres.
-The dashboard and Market Brief rank verified signals and news using that stored
-profile. The form configuration itself is managed separately from this codebase.
+Sign-up and login are native ProcureChain flows. A new email must use `/register`;
+an email already present in Postgres must use `/login`. Both flows verify a
+six-digit email code. New users then complete the native `/onboarding` profile,
+which saves identity, location, preferred currency, industry, procurement
+interests, commodity interests, and explicit newsletter consent to Postgres.
+The dashboard and Market Brief prioritize verified signals and news using that
+stored profile without hiding the wider market.
 
-The form should redirect to `https://procurechain.online/onboarding/complete`.
-The API service needs `GOHIGHLEVEL_API_KEY` and `GOHIGHLEVEL_LOCATION_ID`, with
-permission to read contacts and custom-field definitions. The integration accepts
-the field labels shown in the signup form as well as their standard `contact.*`
-keys, including Preferred Currency, Procurement Interests, and Commodity Interests.
+GoHighLevel is separate from authentication. The `/book-demo` page embeds the GHL
+survey or calendar configured by `NEXT_PUBLIC_GHL_DEMO_SURVEY_URL`. Other lead
+captures are saved to Postgres and asynchronously pushed to GHL when
+`GOHIGHLEVEL_API_KEY` and `GOHIGHLEVEL_LOCATION_ID` are configured. See
+`docs/ProcureChain GHL Integration Guide.docx` for the operational map.
 
 ## Architecture decisions worth knowing about
 

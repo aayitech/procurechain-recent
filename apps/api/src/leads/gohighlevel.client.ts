@@ -95,7 +95,12 @@ export class GoHighLevelClient {
           phone: lead.phone ?? undefined,
           companyName: lead.company ?? undefined,
           source: lead.source,
-          tags: lead.categoriesOfInterest,
+          tags: [
+            ...new Set([
+              ...lead.categoriesOfInterest,
+              ...(lead.source === 'NEWSLETTER' ? ['market-brief-newsletter'] : []),
+            ]),
+          ],
           customFields: [
             { key: 'industry', value: lead.industry ?? '' },
             { key: 'role', value: lead.role ?? '' },

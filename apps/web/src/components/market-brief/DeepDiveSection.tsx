@@ -16,7 +16,7 @@ export function DeepDiveSection({ deepDive }: { deepDive: MarketBriefDeepDive | 
       <div className="card overflow-hidden p-0">
         {deepDive.imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={deepDive.imageUrl} alt="" className="h-48 w-full object-cover" loading="lazy" />
+          <img src={deepDive.imageUrl} alt={deepDive.title} className="h-48 w-full bg-canvas-overlay object-contain" loading="lazy" />
         )}
         <div className="p-6">
           <span className="text-[10px] uppercase tracking-wide text-ink-faint">{deepDive.source}</span>

@@ -14,7 +14,7 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' });
 
-const SITE_URL = 'https://procurechain.example.com';
+const SITE_URL = 'https://www.procurechain.online';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

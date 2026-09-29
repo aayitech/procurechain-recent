@@ -78,3 +78,72 @@ body {
 .container-page {
   @apply mx-auto w-full max-w-7xl px-6;
 }
+
+/* Dashboard views were originally designed with fixed dark Slate utilities.
+   These scoped overrides let those views participate in the selected light
+   theme without changing the intentional dark treatment of hero artwork. */
+:root[data-theme='light'] .theme-aware-surface {
+  background-color: rgb(var(--color-canvas));
+  color: rgb(var(--color-ink));
+}
+
+:root[data-theme='light'] .theme-aware-surface .bg-slate-950,
+:root[data-theme='light'] .theme-aware-surface .bg-slate-950\/90,
+:root[data-theme='light'] .theme-aware-surface .bg-slate-950\/65,
+:root[data-theme='light'] .theme-aware-surface .bg-slate-950\/60,
+:root[data-theme='light'] .theme-aware-surface .bg-slate-950\/45,
+:root[data-theme='light'] .theme-aware-surface .bg-slate-950\/40 {
+  background-color: rgb(var(--color-canvas));
+}
+
+:root[data-theme='light'] .theme-aware-surface .bg-slate-900,
+:root[data-theme='light'] .theme-aware-surface .bg-slate-900\/80,
+:root[data-theme='light'] .theme-aware-surface .bg-slate-900\/75,
+:root[data-theme='light'] .theme-aware-surface .bg-slate-900\/70,
+:root[data-theme='light'] .theme-aware-surface .bg-slate-900\/65,
+:root[data-theme='light'] .theme-aware-surface .bg-slate-900\/60,
+:root[data-theme='light'] .theme-aware-surface .bg-slate-900\/50 {
+  background-color: rgb(var(--color-canvas-raised));
+}
+
+:root[data-theme='light'] .theme-aware-surface .bg-slate-800 {
+  background-color: rgb(var(--color-canvas-overlay));
+}
+
+:root[data-theme='light'] .theme-aware-surface .border-slate-800,
+:root[data-theme='light'] .theme-aware-surface .border-slate-800\/70,
+:root[data-theme='light'] .theme-aware-surface .border-slate-700,
+:root[data-theme='light'] .theme-aware-surface .border-slate-700\/80 {
+  border-color: rgb(var(--color-border));
+}
+
+:root[data-theme='light'] .theme-aware-surface .divide-slate-800 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(var(--color-border));
+}
+
+:root[data-theme='light'] .theme-aware-surface .text-slate-100,
+:root[data-theme='light'] .theme-aware-surface .text-slate-200,
+:root[data-theme='light'] .theme-aware-surface .text-slate-300 {
+  color: rgb(var(--color-ink));
+}
+
+:root[data-theme='light'] .theme-aware-surface .text-slate-400,
+:root[data-theme='light'] .theme-aware-surface .text-slate-500 {
+  color: rgb(var(--color-ink-muted));
+}
+
+:root[data-theme='light'] .theme-aware-surface .text-slate-600 {
+  color: rgb(var(--color-ink-faint));
+}
+
+:root[data-theme='light'] .theme-aware-surface .theme-dark-hero,
+:root[data-theme='light'] .theme-aware-surface .theme-dark-hero .text-slate-100,
+:root[data-theme='light'] .theme-aware-surface .theme-dark-hero .text-slate-200 {
+  color: rgb(241 245 249);
+}
+
+:root[data-theme='light'] .theme-aware-surface .theme-dark-hero .text-slate-300,
+:root[data-theme='light'] .theme-aware-surface .theme-dark-hero .text-slate-400,
+:root[data-theme='light'] .theme-aware-surface .theme-dark-hero .text-slate-500 {
+  color: rgb(203 213 225);
+}

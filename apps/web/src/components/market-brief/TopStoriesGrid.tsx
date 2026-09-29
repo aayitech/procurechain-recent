@@ -17,7 +17,7 @@ export function TopStoriesGrid({ stories }: { stories: MarketBriefTopStory[] }) 
           >
             {story.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={story.imageUrl} alt="" className="h-32 w-full object-cover" loading="lazy" />
+              <img src={story.imageUrl} alt={story.title} className="h-32 w-full bg-canvas-overlay object-contain" loading="lazy" />
             ) : (
               <div className="h-32 w-full bg-canvas-overlay" />
             )}

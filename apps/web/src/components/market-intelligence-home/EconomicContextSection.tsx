@@ -14,7 +14,7 @@ export function EconomicContextSection({ entries }: { entries: EconomicContextEn
         <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-faint">Economic Context</h2>
       </div>
       <p className="mb-4 text-xs text-ink-faint">
-        Supporting intelligence, shown with the real comparison period each indicator's own update
+        Supporting intelligence, shown with the real comparison period each indicator&apos;s own update
         frequency actually supports — never a fabricated short-term change on monthly/annual data.
       </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

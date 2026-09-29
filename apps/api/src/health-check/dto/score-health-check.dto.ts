@@ -1,4 +1,4 @@
-import { IsIn, IsObject } from 'class-validator';
+import { IsObject } from 'class-validator';
 
 export class ScoreHealthCheckDto {
   @IsObject()

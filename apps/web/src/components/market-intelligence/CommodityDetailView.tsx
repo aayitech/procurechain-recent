@@ -19,6 +19,7 @@ import { AIMarketStory } from './AIMarketStory';
 import { Tabs, type TabDef } from '@/components/shared/Tabs';
 import { ComingSoonPanel } from '@/components/shared/ComingSoonPanel';
 import { CATEGORY_CONTEXT } from '@/lib/commodity-categories';
+import { isMonetaryMarketValue } from '@/lib/market-value';
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -165,6 +166,7 @@ export function CommodityDetailView({ symbol }: { symbol: string }) {
       content: <HistoricalDataTable history={data.history} unit={data.unit} />,
     },
   ];
+  const monetary = isMonetaryMarketValue(data);
 
   return (
     <div>
@@ -178,10 +180,10 @@ export function CommodityDetailView({ symbol }: { symbol: string }) {
           <h1 className="mt-1 text-3xl font-semibold text-ink">{data.name}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <span className="font-mono text-2xl text-ink">
-              {data.latestPrice.toFixed(2)} <span className="text-sm text-ink-faint">{data.currency}</span>
+              {data.latestPrice.toFixed(2)} <span className="text-sm text-ink-faint">{monetary ? data.currency : data.unit}</span>
             </span>
-            {(() => {
-              const converted = convert(data.latestPrice);
+            {monetary && (() => {
+              const converted = convert(data.latestPrice, data.currency);
               return !converted.isUsd ? (
                 <span className="font-mono text-lg text-ink-muted">
                   ≈ {converted.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })} {converted.currencyCode}
@@ -190,12 +192,12 @@ export function CommodityDetailView({ symbol }: { symbol: string }) {
             })()}
             <ChangeBadge value={data.change7d} label={data.periodShortLabel} size="lg" />
             <span className="text-sm text-ink-faint">
-              {data.unit} · updated {formatTime(data.asOf)}
+              {monetary ? `${data.unit} · ` : ''}updated {formatTime(data.asOf)}
             </span>
           </div>
           {(() => {
-            const converted = convert(1);
-            return !converted.isUsd && converted.rate ? (
+            const converted = monetary ? convert(1, data.currency) : null;
+            return converted && !converted.isUsd && converted.rate ? (
               <p className="mt-1 text-xs text-ink-faint">
                 Exchange rate: 1 USD = {converted.rate.toFixed(4)} {converted.currencyCode}
                 {converted.rateAsOf && ` · updated ${formatTime(converted.rateAsOf)}`}

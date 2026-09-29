@@ -537,7 +537,9 @@ export class MarketDataService implements OnApplicationBootstrap {
       });
       if (rows.length === 0) continue;
 
-      const ascending = [...rows].reverse();
+      const observedRows = this.observedCommodityRows(commodity.symbol, rows);
+      if (observedRows.length === 0) continue;
+      const ascending = [...observedRows].reverse();
       const latest = ascending[ascending.length - 1];
       const frequency = (commodity.frequency as IndicatorFrequency) ?? 'daily';
       const stats = computeChangeStats(ascending, frequency);
@@ -548,7 +550,7 @@ export class MarketDataService implements OnApplicationBootstrap {
         unit: commodity.unit,
         category: commodity.category,
         latestPrice: latest.price,
-        currency: latest.currency,
+        currency: this.isMonetaryCommodity(commodity.category, commodity.unit) ? latest.currency : '',
         asOf: latest.asOf.toISOString(),
         change7d: stats.change7d,
         change30d: stats.change30d,
@@ -581,7 +583,11 @@ export class MarketDataService implements OnApplicationBootstrap {
       throw new NotFoundException(`No price history yet for ${symbol}`);
     }
 
-    const ascending = [...rows].reverse();
+    const observedRows = this.observedCommodityRows(commodity.symbol, rows);
+    if (observedRows.length === 0) {
+      throw new NotFoundException(`No observed history yet for ${symbol}`);
+    }
+    const ascending = [...observedRows].reverse();
     const latest = ascending[ascending.length - 1];
     const frequency = (commodity.frequency as IndicatorFrequency) ?? 'daily';
     const stats = computeChangeStats(ascending, frequency);
@@ -592,7 +598,7 @@ export class MarketDataService implements OnApplicationBootstrap {
       unit: commodity.unit,
       category: commodity.category,
       latestPrice: latest.price,
-      currency: latest.currency,
+      currency: this.isMonetaryCommodity(commodity.category, commodity.unit) ? latest.currency : '',
       asOf: latest.asOf.toISOString(),
       change7d: stats.change7d,
       change30d: stats.change30d,
@@ -617,6 +623,21 @@ export class MarketDataService implements OnApplicationBootstrap {
         unit: detail.unit,
       })),
     );
+  }
+
+  private observedCommodityRows<T extends { asOf: Date }>(symbol: string, rows: T[]): T[] {
+    if (!symbol.startsWith('INFLATION_') && !symbol.startsWith('GDP_GROWTH_')) return rows;
+    const startOfCurrentYear = Date.UTC(new Date().getUTCFullYear(), 0, 1);
+    return rows.filter((row) => row.asOf.getTime() < startOfCurrentYear);
+  }
+
+  private isMonetaryCommodity(category: string, unit: string): boolean {
+    const normalizedCategory = category.toLowerCase();
+    const normalizedUnit = unit.toLowerCase();
+    return !normalizedCategory.includes('economic indicator') &&
+      !normalizedUnit.includes('percent') &&
+      !normalizedUnit.includes('%') &&
+      !normalizedUnit.includes('index');
   }
 
   async listFx(): Promise<FxListEntry[]> {

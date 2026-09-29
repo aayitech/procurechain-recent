@@ -22,6 +22,7 @@ export function CalculatorShell({ title, description, slug, csvFilename, getCsvR
   const [unlocked, setUnlocked] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
+  const [newsletterOptIn, setNewsletterOptIn] = useState(false);
   const { mutate, isPending } = useCreateLead();
   const track = useTrackEngagement();
 
@@ -46,7 +47,7 @@ export function CalculatorShell({ title, description, slug, csvFilename, getCsvR
         email,
         source: 'CALCULATOR_DOWNLOAD',
         sourceDetail: slug,
-        newsletterOptIn: false,
+        newsletterOptIn,
         sessionId: getEngagementSessionId(),
       },
       {
@@ -83,7 +84,7 @@ export function CalculatorShell({ title, description, slug, csvFilename, getCsvR
           <form onSubmit={handleGateSubmit} className="card max-w-md p-5">
             <p className="text-sm font-medium text-ink">Get your results as a CSV</p>
             <p className="mt-1 text-xs text-ink-faint">
-              We&apos;ll also add you to the weekly procurement briefing — unsubscribe anytime.
+              Enter your email to download the CSV. Newsletter subscription is optional.
             </p>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
               <input
@@ -109,6 +110,15 @@ export function CalculatorShell({ title, description, slug, csvFilename, getCsvR
                 {isPending ? 'Sending…' : 'Get CSV'}
               </button>
             </div>
+            <label className="mt-3 flex items-start gap-2 text-xs text-ink-muted">
+              <input
+                type="checkbox"
+                checked={newsletterOptIn}
+                onChange={(event) => setNewsletterOptIn(event.target.checked)}
+                className="mt-0.5"
+              />
+              Subscribe me to the weekly Procurement Market Brief. I can unsubscribe at any time.
+            </label>
           </form>
         )}
       </div>

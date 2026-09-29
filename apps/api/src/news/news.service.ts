@@ -47,6 +47,29 @@ function extractImageUrl(input: string | undefined): string | null {
   return match ? match[1] : null;
 }
 
+function feedImageUrl(item: Record<string, unknown>): string | null {
+  const readUrl = (value: unknown): string | null => {
+    if (typeof value === 'string' && /^https?:\/\//i.test(value)) return value;
+    if (!value || typeof value !== 'object') return null;
+    const record = value as Record<string, unknown>;
+    const candidate = record['@_url'] ?? record.url ?? record.href;
+    return typeof candidate === 'string' && /^https?:\/\//i.test(candidate) ? candidate : null;
+  };
+  const candidates = [
+    item['media:content'],
+    item['media:thumbnail'],
+    item.enclosure,
+  ];
+  for (const candidate of candidates) {
+    const values = Array.isArray(candidate) ? candidate : [candidate];
+    for (const value of values) {
+      const url = readUrl(value);
+      if (url) return url;
+    }
+  }
+  return extractImageUrl(item.description ? String(item.description) : undefined);
+}
+
 @Injectable()
 export class NewsService {
   private readonly logger = new Logger(NewsService.name);
@@ -96,7 +119,7 @@ export class NewsService {
           source: feed.source,
           publishedAt: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(),
           description: stripHtml(String(item.description ?? '')).slice(0, 220),
-          imageUrl: extractImageUrl(item.description ? String(item.description) : undefined),
+          imageUrl: feedImageUrl(item as Record<string, unknown>),
         }));
     } catch (error) {
       this.logger.warn(`Feed fetch threw for ${feed.source}: ${(error as Error).message}`);

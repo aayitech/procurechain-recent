@@ -101,7 +101,7 @@ export function AssistantChat({ initialQuestion, currentContext = {} }: { initia
   }
 
   return (
-    <div className="grid min-h-[calc(100vh-4rem)] bg-slate-950 text-slate-100 lg:grid-cols-[230px_minmax(0,1fr)]">
+    <div className="theme-aware-surface grid min-h-[calc(100vh-4rem)] bg-slate-950 text-slate-100 lg:grid-cols-[230px_minmax(0,1fr)]">
       <aside className="hidden border-r border-slate-800 bg-slate-950/90 p-3 lg:flex lg:flex-col">
         <button type="button" onClick={() => { setMessages([]); setConversationId(undefined); startedConversation.current = false; }} className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold hover:bg-blue-500"><Plus className="h-4 w-4" /> New conversation</button>
         <p className="mb-2 mt-6 px-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Explore topics</p>
