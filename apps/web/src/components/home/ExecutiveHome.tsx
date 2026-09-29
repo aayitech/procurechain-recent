@@ -63,7 +63,7 @@ export function ExecutiveHome() {
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">{greeting}</h1>
         <p className="mt-3 text-base text-slate-300 sm:text-lg">Smarter procurement starts with trusted market signals, current prices and useful context.</p><p className="mt-2 text-sm text-slate-400">{today}</p>
       </div>
-      {(user?.country || user?.industry || user?.jobTitle) && <div className="mt-7 flex flex-wrap gap-2">{[user.country, user.industry, user.jobTitle].filter(Boolean).map((item) => <span key={item} className="rounded-lg border border-slate-700 bg-slate-900/75 px-3 py-2 text-xs text-slate-300">{item}</span>)}</div>}
+      {(user?.country || user?.industry || user?.jobTitle) && <div className="mt-7 flex flex-wrap gap-2">{[user.country, user.industry, user.jobTitle].filter(Boolean).map((item) => <span key={item} className="rounded-lg border border-slate-700 bg-slate-900/75 px-3 py-2 text-xs text-slate-900 dark:text-slate-300">{item}</span>)}</div>}
       </div>
     </section>
     <div id="dashboard" className="container-page space-y-8 py-8">
