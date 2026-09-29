@@ -1,4 +1,5 @@
-import { IsEmail, Matches } from 'class-validator';
+import { IsEmail, IsIn, Matches } from 'class-validator';
+import type { AuthMode } from './request-login-code.dto';
 
 export class VerifyLoginCodeDto {
   @IsEmail()
@@ -6,4 +7,7 @@ export class VerifyLoginCodeDto {
 
   @Matches(/^\d{6}$/, { message: 'Code must contain exactly 6 digits' })
   code!: string;
+
+  @IsIn(['LOGIN', 'SIGNUP'])
+  mode!: AuthMode;
 }

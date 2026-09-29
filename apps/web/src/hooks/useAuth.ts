@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth-store';
 import { usePreferencesStore } from '@/store/preferences-store';
 import type {
   AuthResponse,
+  CompleteOnboardingInput,
   RequestLoginCodeInput,
   RequestLoginCodeResponse,
   VerifyLoginCodeInput,
@@ -38,7 +39,8 @@ export function useCompleteOnboarding() {
   const setCountry = usePreferencesStore((state) => state.setCountry);
   const setCurrencyCode = usePreferencesStore((state) => state.setCurrencyCode);
   return useMutation({
-    mutationFn: () => apiClient.post<AuthResponse['user']>('/auth/onboarding/complete', {}),
+    mutationFn: (input: CompleteOnboardingInput) =>
+      apiClient.post<AuthResponse['user']>('/auth/onboarding/complete', input),
     onSuccess: (user) => {
       updateUser(user);
       if (user.country) setCountry(user.country);

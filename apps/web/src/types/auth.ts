@@ -30,6 +30,7 @@ export interface AuthResponse {
 
 export interface RequestLoginCodeInput {
   email: string;
+  mode: 'LOGIN' | 'SIGNUP';
 }
 
 export interface RequestLoginCodeResponse {
@@ -41,4 +42,24 @@ export interface RequestLoginCodeResponse {
 export interface VerifyLoginCodeInput {
   email: string;
   code: string;
+  mode: 'LOGIN' | 'SIGNUP';
+}
+
+export interface CompleteOnboardingInput {
+  firstName: string;
+  lastName: string;
+  company: string;
+  jobTitle: string;
+  phone?: string;
+  country: string;
+  regionCity?: string;
+  preferredCurrency: string;
+  industry: string;
+  procurementCategories: string[];
+  commodities: string[];
+  purchaseMix?: string;
+  sourcingCountries: string[];
+  tradeLanes: string[];
+  procurementChallenges: string[];
+  newsletterOptIn: boolean;
 }

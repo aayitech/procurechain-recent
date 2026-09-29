@@ -16,7 +16,7 @@ export function PriceAlertCapture({ symbol, name, currentPrice }: { symbol: stri
       email,
       source: 'GENERAL',
       sourceDetail: `price_alert:${symbol}:threshold=${threshold}`,
-      newsletterOptIn: true,
+      newsletterOptIn: false,
     });
   }
 

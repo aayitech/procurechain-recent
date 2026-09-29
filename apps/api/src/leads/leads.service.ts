@@ -30,7 +30,7 @@ export class LeadsService {
         annualSpendBand: dto.annualSpendBand,
         categoriesOfInterest: dto.categoriesOfInterest ?? [],
         preferredLanguage: dto.preferredLanguage ?? 'en',
-        newsletterOptIn: dto.newsletterOptIn ?? true,
+        newsletterOptIn: dto.newsletterOptIn ?? false,
         source: dto.source,
         sourceDetail: dto.sourceDetail,
         customFields: dto.customFields,

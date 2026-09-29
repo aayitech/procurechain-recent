@@ -30,7 +30,7 @@ model User {
   country       String?
   industry      String?
   jobTitle      String?
-  newsletterOptIn Boolean          @default(true)
+  newsletterOptIn Boolean          @default(false)
   role          UserRole           @default(USER)
   provider      AuthProvider       @default(EMAIL)
   providerId    String?
@@ -324,7 +324,7 @@ model Lead {
   annualSpendBand       String?
   categoriesOfInterest  String[]               @default([])
   preferredLanguage     String?                @default("en")
-  newsletterOptIn       Boolean                @default(true)
+  newsletterOptIn       Boolean                @default(false)
   source                LeadSource
   sourceDetail          String?
   status                LeadStatus             @default(NEW)

@@ -46,7 +46,7 @@ export function CalculatorShell({ title, description, slug, csvFilename, getCsvR
         email,
         source: 'CALCULATOR_DOWNLOAD',
         sourceDetail: slug,
-        newsletterOptIn: true,
+        newsletterOptIn: false,
         sessionId: getEngagementSessionId(),
       },
       {

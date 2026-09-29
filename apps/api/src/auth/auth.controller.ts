@@ -7,6 +7,7 @@ import { RequestLoginCodeDto } from './dto/request-login-code.dto';
 import { VerifyLoginCodeDto } from './dto/verify-login-code.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import type { JwtPayload } from './strategies/jwt.strategy';
+import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -33,8 +34,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Header('Cache-Control', 'no-store')
   @UseGuards(JwtAuthGuard)
-  completeOnboarding(@Req() req: Request) {
-    return this.authService.completeOnboarding((req.user as JwtPayload).sub);
+  completeOnboarding(@Req() req: Request, @Body() dto: CompleteOnboardingDto) {
+    return this.authService.completeOnboarding((req.user as JwtPayload).sub, dto);
   }
 
   @Get('me')

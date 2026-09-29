@@ -141,7 +141,7 @@ export class HealthCheckService {
       role: dto.lead.jobTitle,
       source: LeadSource.ASSESSMENT,
       sourceDetail: 'procurement-health-check',
-      newsletterOptIn: true,
+      newsletterOptIn: false,
       customFields,
     });
 

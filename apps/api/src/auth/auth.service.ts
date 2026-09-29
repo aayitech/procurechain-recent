@@ -1,12 +1,12 @@
-import { HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, HttpException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { createHmac, randomInt, timingSafeEqual } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { GoHighLevelClient } from '../leads/gohighlevel.client';
 import { AuthEmailService } from './auth-email.service';
-import { RequestLoginCodeDto } from './dto/request-login-code.dto';
+import { RequestLoginCodeDto, type AuthMode } from './dto/request-login-code.dto';
 import { VerifyLoginCodeDto } from './dto/verify-login-code.dto';
+import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
 
 const CODE_TTL_MINUTES = 10;
 const CODE_RESEND_COOLDOWN_MS = 60_000;
@@ -53,11 +53,11 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly email: AuthEmailService,
-    private readonly goHighLevel: GoHighLevelClient,
   ) {}
 
   async requestLoginCode(dto: RequestLoginCodeDto): Promise<LoginCodeRequestedResult> {
     const email = this.normalizeEmail(dto.email);
+    await this.assertAccountMode(email, dto.mode);
     const now = new Date();
     const previous = await this.prisma.passwordlessLoginCode.findUnique({ where: { email } });
 
@@ -92,6 +92,7 @@ export class AuthService {
 
   async verifyLoginCode(dto: VerifyLoginCodeDto): Promise<AuthResult> {
     const email = this.normalizeEmail(dto.email);
+    await this.assertAccountMode(email, dto.mode);
     const record = await this.prisma.passwordlessLoginCode.findUnique({ where: { email } });
     const now = new Date();
 
@@ -139,34 +140,40 @@ export class AuthService {
     return this.buildAuthResult(user);
   }
 
-  async completeOnboarding(userId: string): Promise<AuthResult['user']> {
-    const currentUser = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
-    const profile = await this.getSubmittedGhlProfile(currentUser.email);
+  async completeOnboarding(userId: string, profile: CompleteOnboardingDto): Promise<AuthResult['user']> {
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: {
         onboardingCompletedAt: new Date(),
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-        company: profile.company,
-        phone: profile.phone,
-        country: profile.country,
-        industry: profile.industry,
-        jobTitle: profile.jobTitle,
-        newsletterOptIn: true,
+        firstName: profile.firstName.trim(),
+        lastName: profile.lastName.trim(),
+        company: profile.company.trim(),
+        phone: profile.phone?.trim() || null,
+        country: profile.country.trim(),
+        industry: profile.industry.trim(),
+        jobTitle: profile.jobTitle.trim(),
+        newsletterOptIn: profile.newsletterOptIn,
         marketProfile: {
           upsert: {
             create: {
-              regionCity: profile.regionCity,
+              regionCity: profile.regionCity?.trim() || null,
               currency: profile.preferredCurrency,
-              procurementCategories: profile.procurementInterests,
-              commodities: profile.commodityInterests,
+              procurementCategories: this.cleanList(profile.procurementCategories),
+              commodities: this.cleanList(profile.commodities),
+              purchaseMix: profile.purchaseMix?.trim() || null,
+              sourcingCountries: this.cleanList(profile.sourcingCountries),
+              tradeLanes: this.cleanList(profile.tradeLanes),
+              procurementChallenges: this.cleanList(profile.procurementChallenges),
             },
             update: {
-              regionCity: profile.regionCity,
+              regionCity: profile.regionCity?.trim() || null,
               currency: profile.preferredCurrency,
-              procurementCategories: profile.procurementInterests,
-              commodities: profile.commodityInterests,
+              procurementCategories: this.cleanList(profile.procurementCategories),
+              commodities: this.cleanList(profile.commodities),
+              purchaseMix: profile.purchaseMix?.trim() || null,
+              sourcingCountries: this.cleanList(profile.sourcingCountries),
+              tradeLanes: this.cleanList(profile.tradeLanes),
+              procurementChallenges: this.cleanList(profile.procurementChallenges),
             },
           },
         },
@@ -176,29 +183,21 @@ export class AuthService {
     return this.buildUser(user);
   }
 
-  private async getSubmittedGhlProfile(email: string) {
-    if (!this.goHighLevel.isConfigured()) {
-      throw new HttpException('Signup profile integration is not configured', HttpStatus.SERVICE_UNAVAILABLE);
+  private async assertAccountMode(email: string, mode: AuthMode): Promise<void> {
+    const existing = await this.prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
+      select: { id: true },
+    });
+    if (mode === 'LOGIN' && !existing) {
+      throw new NotFoundException('No account exists for this email. Create an account first.');
     }
-
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      const profile = await this.goHighLevel.getContactProfileByEmail(email);
-      if (profile?.industry && profile.preferredCurrency && profile.procurementInterests.length > 0 && profile.commodityInterests.length > 0) {
-        return profile;
-      }
-      if (attempt === 2 && profile) {
-        throw new HttpException(
-          'Your signup profile is incomplete or its custom fields cannot be read yet. Please check the required fields and refresh.',
-          HttpStatus.SERVICE_UNAVAILABLE,
-        );
-      }
-      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+    if (mode === 'SIGNUP' && existing) {
+      throw new ConflictException('An account already exists for this email. Log in instead.');
     }
+  }
 
-    throw new HttpException(
-      'Your signup profile is still being processed. Please refresh in a moment.',
-      HttpStatus.SERVICE_UNAVAILABLE,
-    );
+  private cleanList(values: string[]): string[] {
+    return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
   }
 
   private normalizeEmail(email: string): string {
