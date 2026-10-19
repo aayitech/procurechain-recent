@@ -7,14 +7,17 @@ import type { BuyerCampaign } from '@/lib/buyer-campaigns';
 import { captureCampaignAttribution, getCampaignAttribution, leadAttributionFields } from '@/lib/campaign-attribution';
 import { getEngagementSessionId } from '@/lib/engagement';
 import { useCreateLead } from '@/hooks/useCreateLead';
+import { useTrackEngagement } from '@/hooks/useEngagement';
 
 export function BuyerCampaignPage({ campaign }: { campaign: BuyerCampaign }) {
   const [form, setForm] = useState({ firstName: '', email: '', company: '', role: '', productInterest: campaign.defaultProductInterest ?? '' });
   const { mutate, isPending, isSuccess, isError } = useCreateLead();
+  const track = useTrackEngagement();
 
   useEffect(() => {
     captureCampaignAttribution(window.location.search, campaign.slug);
-  }, [campaign.slug]);
+    track('campaign_landing_viewed', leadAttributionFields(getCampaignAttribution(), 'campaign-landing-page', campaign.slug));
+  }, [campaign.slug, track]);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

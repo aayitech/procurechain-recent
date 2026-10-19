@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, IsString } from 'class-validator';
+import { IsIn, IsObject, IsOptional, IsString } from 'class-validator';
 import { ENGAGEMENT_EVENT_POINTS } from '../engagement.config';
 
 export class TrackEventDto {
@@ -11,4 +11,8 @@ export class TrackEventDto {
   @IsOptional()
   @IsString()
   leadId?: string;
+
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, string>;
 }

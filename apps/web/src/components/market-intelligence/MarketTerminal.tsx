@@ -12,6 +12,8 @@ import { MARKET_CATEGORIES, universeMatch, type MarketUniverseKind } from '@/lib
 import type { CommodityListEntry, FxListEntry, HistoryPoint } from '@/types/market-data';
 import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
 import { isMonetaryMarketValue, marketValueUnit } from '@/lib/market-value';
+import { useTrackEngagement } from '@/hooks/useEngagement';
+import { captureCampaignAttribution, getCampaignAttribution, leadAttributionFields } from '@/lib/campaign-attribution';
 
 type TerminalInstrument = {
   key: string; id: string; kind: MarketUniverseKind; name: string; category: string;
@@ -52,6 +54,7 @@ function movementImpact(item: TerminalInstrument) {
 
 export function MarketTerminal() {
   const searchParams = useSearchParams();
+  const track = useTrackEngagement();
   const { data: commodities = [], isLoading: commoditiesLoading } = useCommodityList();
   const { data: fx = [], isLoading: fxLoading } = useFxList();
   const { toggle, isWatched } = useWatchlist();
@@ -60,6 +63,12 @@ export function MarketTerminal() {
   const [category, setCategory] = useState<(typeof MARKET_CATEGORIES)[number]>('All');
   const [sort, setSort] = useState<'priority' | 'name' | 'movement'>('priority');
   const [selectedKey, setSelectedKey] = useState('');
+
+  useEffect(() => {
+    captureCampaignAttribution(window.location.search);
+    track('market_intelligence_viewed', leadAttributionFields(getCampaignAttribution(), 'market-intelligence'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const instruments = useMemo(() => {
     const raw = [...commodities.map(fromCommodity), ...fx.map(fromFx)];

@@ -347,6 +347,7 @@ model EngagementEvent {
   lead      Lead?    @relation(fields: [leadId], references: [id])
   eventType String
   points    Int
+  metadata  Json?
   createdAt DateTime @default(now())
 
   @@index([sessionId])

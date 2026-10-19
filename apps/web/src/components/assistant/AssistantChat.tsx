@@ -7,6 +7,7 @@ import { useTrackEngagement } from '@/hooks/useEngagement';
 import { useAuthStore } from '@/store/auth-store';
 import { GhlDemoDialog } from '@/components/leads/GhlDemoDialog';
 import { useLanguage } from '@/components/i18n/LanguageProvider';
+import { getCampaignAttribution, leadAttributionFields } from '@/lib/campaign-attribution';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -49,7 +50,7 @@ export function AssistantChat({ initialQuestion, currentContext = {} }: { initia
 
     if (!startedConversation.current) {
       startedConversation.current = true;
-      track('ai_conversation_started');
+      track('ai_conversation_started', leadAttributionFields(getCampaignAttribution(), 'market-intelligence-assistant'));
     }
 
     setMessages((prev) => [...prev, { role: 'user', content: trimmed }]);

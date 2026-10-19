@@ -6,7 +6,7 @@ import { useTrackEngagement } from '@/hooks/useEngagement';
 import { HealthCheckIntro } from '@/components/health-check/HealthCheckIntro';
 import { HealthCheckWizard } from '@/components/health-check/HealthCheckWizard';
 import { HealthCheckResult } from '@/components/health-check/HealthCheckResult';
-import { captureCampaignAttribution } from '@/lib/campaign-attribution';
+import { captureCampaignAttribution, getCampaignAttribution, leadAttributionFields } from '@/lib/campaign-attribution';
 
 type Phase = 'intro' | 'wizard' | 'result';
 
@@ -22,7 +22,7 @@ export default function HealthCheckPage() {
   }, []);
 
   function handleStart() {
-    track('assessment_started');
+    track('assessment_started', leadAttributionFields(getCampaignAttribution(), 'procurement-health-check'));
     setPhase('wizard');
   }
 
@@ -30,7 +30,7 @@ export default function HealthCheckPage() {
     setAnswers(finalAnswers);
     scoreMutate(finalAnswers, {
       onSuccess: () => {
-        track('assessment_completed');
+        track('assessment_completed', leadAttributionFields(getCampaignAttribution(), 'procurement-health-check'));
         setPhase('result');
       },
     });

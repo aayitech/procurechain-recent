@@ -72,6 +72,6 @@ export function leadAttributionFields(attribution: CampaignAttribution, asset: s
     ...(campaign ? { campaign_name: campaign } : {}),
     ...(attribution.campaign_name ? {} : { campaign_name: 'organic' }),
     asset_entered_through: asset,
-    landing_page: typeof window === 'undefined' ? '' : window.location.pathname,
+    landing_page: typeof window === 'undefined' ? '' : window.location.pathname.slice(0, 200),
   };
 }

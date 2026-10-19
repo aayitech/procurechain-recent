@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { useCreateLead } from '@/hooks/useCreateLead';
+import { useTrackEngagement } from '@/hooks/useEngagement';
 import { captureCampaignAttribution, getCampaignAttribution, leadAttributionFields } from '@/lib/campaign-attribution';
 import { getEngagementSessionId } from '@/lib/engagement';
 
@@ -10,6 +11,7 @@ export function NewsletterSignup() {
   const [email, setEmail] = useState('');
   const [consented, setConsented] = useState(false);
   const { mutate, isPending, isSuccess, isError } = useCreateLead();
+  const track = useTrackEngagement();
 
   useEffect(() => {
     captureCampaignAttribution(window.location.search);
@@ -25,6 +27,8 @@ export function NewsletterSignup() {
       sourceDetail: 'market_brief_subscription',
       sessionId: getEngagementSessionId(),
       customFields: leadAttributionFields(getCampaignAttribution(), 'market-brief-newsletter'),
+    }, {
+      onSuccess: () => track('newsletter_subscribed', leadAttributionFields(getCampaignAttribution(), 'market-brief-newsletter')),
     });
   }
 

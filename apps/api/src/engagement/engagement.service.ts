@@ -15,7 +15,7 @@ export class EngagementService {
   async track(dto: TrackEventDto): Promise<EngagementScoreResult> {
     const points = ENGAGEMENT_EVENT_POINTS[dto.eventType];
     await this.prisma.engagementEvent.create({
-      data: { sessionId: dto.sessionId, leadId: dto.leadId, eventType: dto.eventType, points },
+      data: { sessionId: dto.sessionId, leadId: dto.leadId, eventType: dto.eventType, points, metadata: dto.metadata },
     });
     return this.getScoreForSession(dto.sessionId);
   }

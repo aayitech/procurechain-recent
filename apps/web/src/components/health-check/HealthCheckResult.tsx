@@ -26,7 +26,7 @@ export function HealthCheckResult({ result, answers }: { result: HealthCheckScor
   const unlocked = Boolean(unlockedResult);
 
   useEffect(() => {
-    track('result_viewed');
+    track('result_viewed', leadAttributionFields(getCampaignAttribution(), 'procurement-health-check-result'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

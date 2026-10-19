@@ -29,12 +29,13 @@ export function CalculatorShell({ title, description, slug, csvFilename, getCsvR
 
   useEffect(() => {
     captureCampaignAttribution(window.location.search);
-    track('calculator_used');
+    track('calculator_used', leadAttributionFields(getCampaignAttribution(), slug));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleDownloadClick() {
     if (unlocked) {
+      track('calculator_exported', leadAttributionFields(getCampaignAttribution(), slug));
       downloadCsv(csvFilename, getCsvRows());
       return;
     }
@@ -57,6 +58,7 @@ export function CalculatorShell({ title, description, slug, csvFilename, getCsvR
         onSuccess: () => {
           setUnlocked(true);
           setShowGate(false);
+          track('calculator_exported', leadAttributionFields(getCampaignAttribution(), slug));
           downloadCsv(csvFilename, getCsvRows());
         },
       },

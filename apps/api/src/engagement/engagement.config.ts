@@ -5,11 +5,15 @@
 // this app can genuinely observe rather than a fake counter that never
 // increments for the untracked ones.
 export const ENGAGEMENT_EVENT_POINTS: Record<string, number> = {
+  campaign_landing_viewed: 5,
   assessment_started: 10,
   assessment_completed: 25,
   result_viewed: 10,
   calculator_used: 15,
+  calculator_exported: 10,
+  market_intelligence_viewed: 5,
   ai_conversation_started: 30,
+  newsletter_subscribed: 0,
 };
 
 export type EngagementEventType = keyof typeof ENGAGEMENT_EVENT_POINTS;
