@@ -6,6 +6,7 @@ import { Footer } from '@/components/layout/Footer';
 import { ThemeInit } from '@/components/theme/ThemeInit';
 import { PreferencesInit } from '@/components/theme/PreferencesInit';
 import { AuthInit } from '@/components/theme/AuthInit';
+import { CampaignAttributionInit } from '@/components/theme/CampaignAttributionInit';
 import { OnboardingGuard } from '@/components/auth/OnboardingGuard';
 import { GlobalSearch } from '@/components/layout/GlobalSearch';
 import { LanguageProvider } from '@/components/i18n/LanguageProvider';
@@ -75,6 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <ThemeInit />
             <PreferencesInit />
             <AuthInit />
+            <CampaignAttributionInit />
             <OnboardingGuard />
             <GlobalSearch />
             <Header />

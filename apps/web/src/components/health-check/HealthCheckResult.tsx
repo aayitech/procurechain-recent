@@ -8,6 +8,7 @@ import { useSubmitHealthCheck } from '@/hooks/useHealthCheck';
 import { useTrackEngagement } from '@/hooks/useEngagement';
 import { getEngagementSessionId } from '@/lib/engagement';
 import { saveHealthCheckResult } from '@/lib/health-check-storage';
+import { getCampaignAttribution, leadAttributionFields } from '@/lib/campaign-attribution';
 import { DimensionRadarChart } from './DimensionRadarChart';
 import { HealthCheckLeadGate, type HealthCheckLeadFormValues } from './HealthCheckLeadGate';
 
@@ -43,7 +44,12 @@ export function HealthCheckResult({ result, answers }: { result: HealthCheckScor
       country: values.country || undefined,
       industry: values.industry || undefined,
     };
-    mutate({ answers, lead, sessionId: getEngagementSessionId() });
+    mutate({
+      answers,
+      lead,
+      sessionId: getEngagementSessionId(),
+      attribution: leadAttributionFields(getCampaignAttribution(), 'procurement-health-check'),
+    });
   }
 
   return (

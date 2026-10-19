@@ -110,7 +110,8 @@ export class HealthCheckService {
 
     // Real GHL custom-field payload per the business spec: overall +
     // per-dimension scores, maturity, top 3 gaps, assessment metadata.
-    const customFields: Record<string, string | number> = {
+    const customFields: Record<string, string | number | boolean> = {
+      ...(dto.attribution ?? {}),
       procurement_performance_score: result.overallScore,
       maturity_level: result.maturity.label,
       assessment_completed: 'true',

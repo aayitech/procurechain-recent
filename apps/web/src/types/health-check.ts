@@ -42,5 +42,6 @@ export interface HealthCheckLeadInput {
 export interface SubmitHealthCheckInput {
   answers: Record<string, string>;
   lead: HealthCheckLeadInput;
+  attribution?: Record<string, string>;
   sessionId?: string;
 }

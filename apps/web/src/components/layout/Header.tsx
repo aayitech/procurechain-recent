@@ -66,6 +66,7 @@ const SIMPLE_LINKS = [
 ];
 
 const MOBILE_LINKS = [
+  { label: 'Buyer Resources', href: '/campaigns' },
   { label: 'Market Intelligence', href: '/market-intelligence' },
   { label: 'Market Brief', href: '/market-brief' },
   { label: 'Data Sources', href: '/data-sources' },

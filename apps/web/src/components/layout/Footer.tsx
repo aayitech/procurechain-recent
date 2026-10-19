@@ -28,6 +28,14 @@ const FOOTER_COLUMNS = [
     ],
   },
   {
+    title: 'Buyer Resources',
+    links: [
+      { label: 'Procurement Health', href: '/campaigns/procurement-health' },
+      { label: 'Procurement Savings', href: '/campaigns/procurement-savings' },
+      { label: 'Procurement Intelligence', href: '/campaigns/procurement-intelligence' },
+    ],
+  },
+  {
     title: 'Get Started',
     links: [
       { label: 'Book a Demo', href: '/book-demo' },
@@ -46,7 +54,7 @@ const SOCIAL_LINKS = [
 export function Footer() {
   return (
     <footer className="border-t border-border-subtle bg-canvas-raised">
-      <div className="container-page grid grid-cols-2 gap-8 py-12 sm:grid-cols-4">
+      <div className="container-page grid grid-cols-2 gap-8 py-12 sm:grid-cols-3 lg:grid-cols-5">
         {FOOTER_COLUMNS.map((column) => (
           <div key={column.title}>
             <h3 className="mb-3 text-sm font-semibold text-ink">{column.title}</h3>

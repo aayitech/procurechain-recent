@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useHealthCheckQuestions, useScoreHealthCheck } from '@/hooks/useHealthCheck';
 import { useTrackEngagement } from '@/hooks/useEngagement';
 import { HealthCheckIntro } from '@/components/health-check/HealthCheckIntro';
 import { HealthCheckWizard } from '@/components/health-check/HealthCheckWizard';
 import { HealthCheckResult } from '@/components/health-check/HealthCheckResult';
+import { captureCampaignAttribution } from '@/lib/campaign-attribution';
 
 type Phase = 'intro' | 'wizard' | 'result';
 
@@ -15,6 +16,10 @@ export default function HealthCheckPage() {
   const { data: questions, isLoading } = useHealthCheckQuestions();
   const { mutate: scoreMutate, data: result, isPending: isScoring } = useScoreHealthCheck();
   const track = useTrackEngagement();
+
+  useEffect(() => {
+    captureCampaignAttribution(window.location.search);
+  }, []);
 
   function handleStart() {
     track('assessment_started');

@@ -7,6 +7,7 @@ import { useCreateLead } from '@/hooks/useCreateLead';
 import { useTrackEngagement } from '@/hooks/useEngagement';
 import { getEngagementSessionId } from '@/lib/engagement';
 import { downloadCsv } from '@/lib/csv';
+import { captureCampaignAttribution, getCampaignAttribution, leadAttributionFields } from '@/lib/campaign-attribution';
 
 interface CalculatorShellProps {
   title: string;
@@ -27,6 +28,7 @@ export function CalculatorShell({ title, description, slug, csvFilename, getCsvR
   const track = useTrackEngagement();
 
   useEffect(() => {
+    captureCampaignAttribution(window.location.search);
     track('calculator_used');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -49,6 +51,7 @@ export function CalculatorShell({ title, description, slug, csvFilename, getCsvR
         sourceDetail: slug,
         newsletterOptIn,
         sessionId: getEngagementSessionId(),
+        customFields: leadAttributionFields(getCampaignAttribution(), slug),
       },
       {
         onSuccess: () => {

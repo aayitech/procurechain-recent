@@ -40,4 +40,8 @@ export class SubmitHealthCheckDto {
   @IsOptional()
   @IsString()
   sessionId?: string;
+
+  @IsOptional()
+  @IsObject()
+  attribution?: Record<string, string>;
 }
