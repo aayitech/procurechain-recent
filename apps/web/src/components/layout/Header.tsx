@@ -86,7 +86,7 @@ export function Header() {
       <div className="mx-auto flex h-16 w-full max-w-[1600px] min-w-0 items-center justify-between gap-2 overflow-visible px-4 sm:px-6">
         {/* Logo */}
         <Link href="/" className="mr-4 flex h-8 w-auto shrink-0 items-center" aria-label="ProcureChain home">
-          <Image src="/logo-stacked-compact.png" alt="ProcureChain" w-auto height={32} priority className="h-14 w-[130px] object-contain" />
+          <Image src="/logo-stacked-compact.png" alt="ProcureChain" h-8 w-auto priority className="h-14 w-[130px] object-contain" />
         </Link>
 
         {/* Desktop Navigation */}
