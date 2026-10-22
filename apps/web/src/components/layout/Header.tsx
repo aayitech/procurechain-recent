@@ -85,8 +85,8 @@ export function Header() {
     <header className="site-header-light sticky top-0 z-50 border-b border-slate-200 bg-[#FFFFFF] shadow-[0_4px_20px_rgba(15,23,42,0.06)]">
       <div className="mx-auto flex h-16 w-full max-w-[1600px] min-w-0 items-center justify-between gap-2 overflow-visible px-4 sm:px-6">
         {/* Logo */}
-        <Link href="/" className="mr-4 flex h-11 w-[205px] shrink-0 items-center" aria-label="ProcureChain home">
-          <Image src="/logo.png" alt="ProcureChain" width={205} height={44} priority className="h-11 w-[205px] object-contain" />
+        <Link href="/" className="relative mr-5 block h-11 w-[52px] shrink-0 overflow-hidden" aria-label="ProcureChain home">
+          <Image src="/logo-stacked.png" alt="" width={184} height={184} priority className="absolute left-[-66px] top-[-64px] h-[184px] w-[184px] max-w-none" />
         </Link>
 
         {/* Desktop Navigation */}
