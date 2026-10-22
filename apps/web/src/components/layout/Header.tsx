@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { Menu, Search, X } from 'lucide-react';
 import { useUiStore } from '@/store/ui-store';
@@ -85,15 +84,14 @@ export function Header() {
     <header className="site-header-light sticky top-0 z-50 border-b border-slate-200 bg-[#FFFFFF] shadow-[0_4px_20px_rgba(15,23,42,0.06)]">
       <div className="mx-auto flex h-16 w-full max-w-[1600px] min-w-0 items-center justify-between gap-2 overflow-visible px-4 sm:px-6">
         {/* Logo */}
-        <Link href="/" className="relative block h-11 w-[124px] shrink-0 overflow-hidden" aria-label="ProcureChain home">
-          <Image
-            src="/logo.png"
-            alt="ProcureChain"
-            width={124}
-            height={124}
-            priority
-            className="absolute -top-[44px] left-0 h-[124px] w-[124px] max-w-none"
-          />
+        <Link href="/" className="flex h-11 w-auto shrink-0 items-center gap-2.5" aria-label="ProcureChain home">
+          <svg aria-hidden="true" viewBox="0 0 40 40" className="h-9 w-9 shrink-0 text-[#292E48]" fill="none">
+            <path d="M18.1 8.2 15 7.6a10.3 10.3 0 0 0-7.4 17.7l4.8 4.8a10.3 10.3 0 0 0 17.7-7.4l-.6-3.1" stroke="currentColor" strokeWidth="3.1" strokeLinecap="square" />
+            <path d="m21.9 31.8 3.1.6a10.3 10.3 0 0 0 7.4-17.7l-4.8-4.8A10.3 10.3 0 0 0 9.9 17.3l.6 3.1" stroke="currentColor" strokeWidth="3.1" strokeLinecap="square" />
+          </svg>
+          <span className="whitespace-nowrap text-[17px] font-medium tracking-[-0.055em] text-[#292E48]">
+            Procure<span className="font-normal text-[#737373]">Chain</span>
+          </span>
         </Link>
 
         {/* Desktop Navigation */}
