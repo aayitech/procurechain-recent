@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/auth-store';
 import { GhlDemoDialog } from '@/components/leads/GhlDemoDialog';
 import { useLanguage } from '@/components/i18n/LanguageProvider';
 import { getCampaignAttribution, leadAttributionFields } from '@/lib/campaign-attribution';
+import { getEmailFromUrl, trackGhlEvent } from '@/lib/ghl-tracking';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -51,6 +52,8 @@ export function AssistantChat({ initialQuestion, currentContext = {} }: { initia
     if (!startedConversation.current) {
       startedConversation.current = true;
       track('ai_conversation_started', leadAttributionFields(getCampaignAttribution(), 'market-intelligence-assistant'));
+      const email = getEmailFromUrl();
+      if (user || email) trackGhlEvent({ event: 'nader_engaged', ...(email ? { email } : {}) });
     }
 
     setMessages((prev) => [...prev, { role: 'user', content: trimmed }]);

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, Award, Lock, Target } from 'lucide-react';
 import { loadHealthCheckResult, type StoredHealthCheckResult } from '@/lib/health-check-storage';
 import { DimensionRadarChart } from '@/components/health-check/DimensionRadarChart';
+import { trackGhlEvent } from '@/lib/ghl-tracking';
 
 const ROADMAP_TIERS = ['Industry benchmark', 'Country benchmark', 'Regional benchmark', 'Company-size benchmark', 'Top-quartile comparison'];
 
@@ -41,6 +42,7 @@ export function BenchmarkingView() {
 
   useEffect(() => {
     setStored(loadHealthCheckResult());
+    if (loadHealthCheckResult()) trackGhlEvent({ event: 'benchmarking_used' });
   }, []);
 
   if (stored === undefined) {

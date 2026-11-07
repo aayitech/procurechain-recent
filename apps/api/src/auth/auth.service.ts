@@ -128,7 +128,7 @@ export class AuthService {
       if (existing) {
         return transaction.user.update({
           where: { id: existing.id },
-          data: { emailVerifiedAt: now },
+          data: { emailVerifiedAt: now, ...(dto.mode === 'LOGIN' ? { lastLoginAt: now, loginCount: { increment: 1 } } : {}) },
           include: { marketProfile: true },
         });
       }
@@ -138,6 +138,12 @@ export class AuthService {
         include: { marketProfile: true },
       });
     });
+
+    if (dto.mode === 'LOGIN') {
+      await this.prisma.engagementEvent.create({ data: { sessionId: `login:${user.id}:${now.getTime()}`, eventType: 'login', points: 0, metadata: { userId: user.id } } });
+      if (user.loginCount === 1) void this.ghlTracking.send(this.toGhlProfile(user), [{ id: '1L3KnrPJ2V1Qf6OLkAFe', field_value: now.toISOString().slice(0, 10) }], ['platform_active']);
+      else void this.ghlTracking.send(this.toGhlProfile(user), [{ id: '1L3KnrPJ2V1Qf6OLkAFe', field_value: now.toISOString().slice(0, 10) }], []);
+    }
 
     if (dto.mode === 'SIGNUP') {
       const signupFields = dto.campaignEntryAsset === 'Health Check'

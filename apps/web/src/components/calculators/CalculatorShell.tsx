@@ -31,26 +31,20 @@ export function CalculatorShell({ title, description, slug, csvFilename, getCsvR
 
   useEffect(() => {
     captureCampaignAttribution(window.location.search);
-    const calculator = slug === 'rfq-efficiency' ? 'RFQ Efficiency' : slug === 'tco' ? 'TCO' : slug === 'savings' ? 'Savings' : null;
-    if (calculator) {
-      const emailFromUrl = getEmailFromUrl();
-      if (emailFromUrl) {
-        setEmail(emailFromUrl);
-        setEmailConfirmed(true);
-        trackGhlEvent({ event: 'calculator_used', email: emailFromUrl, calculator });
-      }
-      else setEmail('');
-    }
+    const labels: Record<string, string> = { tco: 'TCO', 'landed-cost': 'Landed Cost', 'currency-impact': 'Currency Impact', 'working-capital': 'Working Capital', 'supplier-comparison': 'Supplier Comparison', 'bid-evaluation': 'Bid Evaluation', 'rfq-efficiency': 'RFQ Efficiency', 'freight-cost': 'Freight Cost', eoq: 'EOQ', savings: 'Savings', 'procurement-roi': 'Procurement ROI', 'carbon-footprint': 'Carbon Footprint' };
+    const calculator = labels[slug];
+    const emailFromUrl = getEmailFromUrl();
+    if (emailFromUrl) { setEmail(emailFromUrl); setEmailConfirmed(true); }
+    else setEmail('');
+    if (!['rfq-efficiency', 'tco', 'savings'].includes(slug) || emailFromUrl) trackGhlEvent({ event: 'calculator_used', ...(emailFromUrl ? { email: emailFromUrl } : {}), calculator });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleCalculatorEmail(event: FormEvent) {
     event.preventDefault();
-    const calculator = slug === 'rfq-efficiency' ? 'RFQ Efficiency' : slug === 'tco' ? 'TCO' : slug === 'savings' ? 'Savings' : null;
-    if (calculator) {
-      setEmailConfirmed(true);
-      trackGhlEvent({ event: 'calculator_used', email, calculator });
-    }
+    setEmailConfirmed(true);
+    const labels: Record<string, string> = { tco: 'TCO', 'landed-cost': 'Landed Cost', 'currency-impact': 'Currency Impact', 'working-capital': 'Working Capital', 'supplier-comparison': 'Supplier Comparison', 'bid-evaluation': 'Bid Evaluation', 'rfq-efficiency': 'RFQ Efficiency', 'freight-cost': 'Freight Cost', eoq: 'EOQ', savings: 'Savings', 'procurement-roi': 'Procurement ROI', 'carbon-footprint': 'Carbon Footprint' };
+    trackGhlEvent({ event: 'calculator_used', email, calculator: labels[slug] || slug });
   }
 
   function handleDownloadClick() {

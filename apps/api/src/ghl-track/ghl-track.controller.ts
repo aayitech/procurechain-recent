@@ -10,6 +10,8 @@ const FIELD_IDS = {
   status: 'FTgvtleYsKkvBY82KDgr', band: 'RwKyBStLVzUI1R3UhMHP', area: 'sLvGFboICx6uHEIyKtYR',
   tool: '6ffkrWfUJpTBamFw11Df', utm_source: 'a2tt6FU9HK8vvWmXRYIp',
   utm_medium: 'gorXK7yRmz2a8eBkzNzL', utm_campaign: 'um8bvbd3WgRRNTKz8NIS',
+  consentDate: '1L3KnrPJ2V1Qf6OLkAFe', productInterest: 'ZYGIUEmfWScV9hdHV0vi',
+  campaignFit: 'TPm8CXAL5faycLhkxf1I', campaignEntryAsset: '8f3HADSHCUHyMHkrL9UY',
 } as const;
 
 function asString(value: unknown): string | undefined {
@@ -63,6 +65,17 @@ export class GhlTrackController {
         add(FIELD_IDS.tool, 'Health Check'); tags = ['buyer_health_completed']; break;
       case 'calculator_used':
         add(FIELD_IDS.tool, dto.calculator); tags = ['calculator_used']; break;
+      case 'follow_up_requested':
+        add(FIELD_IDS.productInterest, dto.productInterest === 'Let my needs guide the recommendation' ? 'Full Platform' : dto.productInterest);
+        add(FIELD_IDS.campaignFit, dto.campaignFit); add(FIELD_IDS.campaignEntryAsset, dto.campaignEntryAsset);
+        tags = ['follow_up_requested', 'leadtype - buyer']; break;
+      case 'newsletter_subscribed':
+        add('RkjltErwFnIIOdtrMHAJ', 'Opted In'); add(FIELD_IDS.campaignEntryAsset, 'Market Brief'); tags = ['newsletter_subscriber']; break;
+      case 'nader_engaged': add(FIELD_IDS.tool, 'Nader'); tags = ['nader_engaged']; break;
+      case 'benchmarking_used': add(FIELD_IDS.tool, 'Benchmarking'); tags = ['benchmarking_used']; break;
+      case 'login':
+        add(FIELD_IDS.consentDate, new Date().toISOString().slice(0, 10));
+        tags = ['login']; break;
       case 'platform_registered':
         tags = ['platform_registered']; break;
     }
@@ -70,6 +83,8 @@ export class GhlTrackController {
       const value = asString(dto.utm?.[name]);
       if (value) add(FIELD_IDS[name], value.slice(0, 200));
     }
+    if (dto.campaignEntryAsset) add(FIELD_IDS.campaignEntryAsset, dto.campaignEntryAsset);
+    else if (dto.landingPage && !fields.some((field) => field.id === FIELD_IDS.campaignEntryAsset)) add(FIELD_IDS.campaignEntryAsset, dto.landingPage.slice(0, 200));
     void this.tracking.send(profile, fields, tags);
     return { ok: true };
   }

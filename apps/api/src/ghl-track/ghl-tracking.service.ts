@@ -31,6 +31,8 @@ const FIELD_IDS = {
   purchaseMix: 'dm6p4Zk732yd0INVNZMi', sourcingCountries: '2zKw3fwdfLW48qpLA3cG',
   tradeLanes: 'Oxk679SUiFzVw0nGeXWO', procurementChallenges: 'Qd0XaT0q53yKM9MJjJj2',
   newsletterOptIn: 'RkjltErwFnIIOdtrMHAJ',
+  productInterest: 'ZYGIUEmfWScV9hdHV0vi', campaignFit: 'TPm8CXAL5faycLhkxf1I',
+  campaignEntryAsset: '8f3HADSHCUHyMHkrL9UY', consentDate: '1L3KnrPJ2V1Qf6OLkAFe',
 } as const;
 
 const CURRENCY_LABELS: Record<string, string> = { USD: '$ USD', EUR: '€ EUR', GBP: '£ GBP', ZAR: 'R ZAR', CNY: '¥ CNY' };
@@ -44,45 +46,26 @@ export class GhlTrackingService {
   private readonly logger = new Logger(GhlTrackingService.name);
   constructor(private readonly config: ConfigService) {}
 
-  async send(profile: GhlProfile, fields: Array<{ id: string; field_value: string }>, tags: string[]): Promise<void> {
+  async upsert(profile: GhlProfile, fields: Array<{ id: string; field_value: string }>, tags: string[]): Promise<boolean> {
     const token = this.config.get<string>('GHL_TOKEN');
     const locationId = this.config.get<string>('GHL_LOCATION_ID');
-    if (!token || !locationId) {
-      this.logger.warn('GHL tracking is not configured');
-      return;
-    }
-
-    const customFields = [...fields, ...this.profileCustomFields(profile)];
-    const body = {
-      locationId,
-      email: profile.email,
-      ...this.nonEmpty('firstName', profile.firstName),
-      ...this.nonEmpty('lastName', profile.lastName),
-      ...this.nonEmpty('phone', this.phoneForGhl(profile.phone, profile.country)),
-      ...this.nonEmpty('companyName', profile.company),
-      ...this.nonEmpty('country', this.countryCode(profile.country)),
-      ...this.nonEmpty('city', profile.city),
-      ...this.nonEmpty('website', profile.website),
-      source: 'procurechain.online',
-      customFields,
-    };
-
+    if (!token || !locationId) { this.logger.warn('GHL tracking is not configured'); return false; }
+    const headers = { Authorization: `Bearer ${token}`, Version: '2021-07-28', 'Content-Type': 'application/json' };
+    const body = { locationId, email: profile.email, ...this.nonEmpty('firstName', profile.firstName), ...this.nonEmpty('lastName', profile.lastName), ...this.nonEmpty('phone', this.phoneForGhl(profile.phone, profile.country)), ...this.nonEmpty('companyName', profile.company), ...this.nonEmpty('country', this.countryCode(profile.country)), ...this.nonEmpty('city', profile.city), ...this.nonEmpty('website', profile.website), source: 'procurechain.online', customFields: [...fields, ...this.profileCustomFields(profile)] };
     try {
-      const headers = { Authorization: `Bearer ${token}`, Version: '2021-07-28', 'Content-Type': 'application/json' };
-      const upsertResponse = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
-        method: 'POST', headers, body: JSON.stringify(body),
-      });
-      if (!upsertResponse.ok) throw new Error(`Contact upsert returned ${upsertResponse.status}`);
-      const response = await upsertResponse.json() as { contact?: { id?: string }; id?: string };
-      const contactId = response.contact?.id ?? response.id;
-      if (!contactId) throw new Error('Contact upsert response did not contain a contact id');
-      const tagResponse = await fetch(`https://services.leadconnectorhq.com/contacts/${encodeURIComponent(contactId)}/tags`, {
-        method: 'POST', headers, body: JSON.stringify({ tags: [...new Set([...tags, ...(profile.newsletterOptIn ? ['newsletter_subscriber'] : [])])] }),
-      });
-      if (!tagResponse.ok) throw new Error(`Contact tagging returned ${tagResponse.status}`);
-    } catch (error) {
-      this.logger.error('GHL tracking failed', error instanceof Error ? error.stack : String(error));
-    }
+      const response = await fetch('https://services.leadconnectorhq.com/contacts/upsert', { method: 'POST', headers, body: JSON.stringify(body) });
+      if (!response.ok) throw new Error(`Contact upsert returned ${response.status}`);
+      const result = await response.json() as { contact?: { id?: string; new?: boolean; created?: boolean }; id?: string; new?: boolean };
+      const id = result.contact?.id ?? result.id;
+      if (!id) throw new Error('Contact upsert response did not contain a contact id');
+      const tagged = await fetch(`https://services.leadconnectorhq.com/contacts/${encodeURIComponent(id)}/tags`, { method: 'POST', headers, body: JSON.stringify({ tags: [...new Set(tags)] }) });
+      if (!tagged.ok) throw new Error(`Contact tagging returned ${tagged.status}`);
+      return Boolean(result.contact?.new ?? result.contact?.created ?? result.new);
+    } catch (error) { this.logger.error('GHL tracking failed', error instanceof Error ? error.stack : String(error)); return false; }
+  }
+
+  async send(profile: GhlProfile, fields: Array<{ id: string; field_value: string }>, tags: string[]): Promise<void> {
+    await this.upsert(profile, fields, [...tags, ...(profile.newsletterOptIn ? ['newsletter_subscriber'] : [])]);
   }
 
   private profileCustomFields(profile: GhlProfile): Array<{ id: string; field_value: string }> {

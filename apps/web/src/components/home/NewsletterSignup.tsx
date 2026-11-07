@@ -5,6 +5,7 @@ import { useCreateLead } from '@/hooks/useCreateLead';
 import { useTrackEngagement } from '@/hooks/useEngagement';
 import { captureCampaignAttribution, getCampaignAttribution, leadAttributionFields } from '@/lib/campaign-attribution';
 import { getEngagementSessionId } from '@/lib/engagement';
+import { trackGhlEvent } from '@/lib/ghl-tracking';
 
 export function NewsletterSignup() {
   const [firstName, setFirstName] = useState('');
@@ -28,7 +29,7 @@ export function NewsletterSignup() {
       sessionId: getEngagementSessionId(),
       customFields: leadAttributionFields(getCampaignAttribution(), 'market-brief-newsletter'),
     }, {
-      onSuccess: () => track('newsletter_subscribed', leadAttributionFields(getCampaignAttribution(), 'market-brief-newsletter')),
+      onSuccess: () => { track('newsletter_subscribed', leadAttributionFields(getCampaignAttribution(), 'market-brief-newsletter')); if (consented) trackGhlEvent({ event: 'newsletter_subscribed', email, firstName, profile: { newsletterOptIn: true }, campaignEntryAsset: 'Market Brief' }); },
     });
   }
 

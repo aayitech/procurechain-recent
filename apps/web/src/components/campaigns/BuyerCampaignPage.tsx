@@ -8,9 +8,10 @@ import { captureCampaignAttribution, getCampaignAttribution, leadAttributionFiel
 import { getEngagementSessionId } from '@/lib/engagement';
 import { useCreateLead } from '@/hooks/useCreateLead';
 import { useTrackEngagement } from '@/hooks/useEngagement';
+import { trackGhlEvent } from '@/lib/ghl-tracking';
 
 export function BuyerCampaignPage({ campaign }: { campaign: BuyerCampaign }) {
-  const [form, setForm] = useState({ firstName: '', email: '', company: '', role: '', productInterest: campaign.defaultProductInterest ?? '' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', company: '', phone: '', message: '', role: '', productInterest: campaign.defaultProductInterest ?? '' });
   const { mutate, isPending, isSuccess, isError } = useCreateLead();
   const track = useTrackEngagement();
 
@@ -22,21 +23,25 @@ export function BuyerCampaignPage({ campaign }: { campaign: BuyerCampaign }) {
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const attribution = getCampaignAttribution();
+    const campaignFit = campaign.slug === 'procurement-health' ? 'A - Procurement Health' : campaign.slug === 'procurement-savings' ? 'B - Procurement Savings' : campaign.slug === 'procurement-intelligence' ? 'C - Procurement Intelligence' : undefined;
+    const campaignEntryAsset = `Follow-up form – ${campaign.slug}`;
     mutate({
       firstName: form.firstName,
+      lastName: form.lastName || undefined,
       email: form.email,
       company: form.company || undefined,
+      phone: form.phone || undefined,
       role: form.role || undefined,
       source: 'GENERAL',
       sourceDetail: campaign.slug,
       sessionId: getEngagementSessionId(),
       customFields: {
         ...leadAttributionFields(attribution, 'campaign-follow-up-form', campaign.slug),
-        campaign_primary_asset: campaign.primaryAsset,
-        ...(form.productInterest ? { product_interest: form.productInterest } : {}),
+        campaign_primary_asset: campaign.primaryAsset, ...(form.message.trim() ? { message: form.message.trim() } : {}),
+        product_interest: form.productInterest || 'Full Platform', campaign_fit: campaignFit || '', campaign_entry_asset: campaignEntryAsset,
         lead_type: 'Buyer',
       },
-    });
+    }, { onSuccess: () => trackGhlEvent({ event: 'follow_up_requested', email: form.email, firstName: form.firstName, lastName: form.lastName, companyName: form.company, phone: form.phone, message: form.message, productInterest: form.productInterest || 'Full Platform', campaignFit, campaignEntryAsset }) });
   }
 
   return (
@@ -91,11 +96,14 @@ export function BuyerCampaignPage({ campaign }: { campaign: BuyerCampaign }) {
           ) : (
             <form onSubmit={submit} className="mt-5 grid gap-3">
               <input required autoComplete="given-name" value={form.firstName} onChange={(event) => setForm({ ...form, firstName: event.target.value })} placeholder="First name" aria-label="First name" className="rounded-lg border border-border bg-canvas-raised px-3 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+              <input autoComplete="family-name" value={form.lastName} onChange={(event) => setForm({ ...form, lastName: event.target.value })} placeholder="Last name (optional)" aria-label="Last name" className="rounded-lg border border-border bg-canvas-raised px-3 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
               <input required type="email" autoComplete="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} placeholder="Work email" aria-label="Work email" className="rounded-lg border border-border bg-canvas-raised px-3 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
               <div className="grid gap-3 sm:grid-cols-2">
                 <input autoComplete="organization" value={form.company} onChange={(event) => setForm({ ...form, company: event.target.value })} placeholder="Company (optional)" aria-label="Company, optional" className="min-w-0 rounded-lg border border-border bg-canvas-raised px-3 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
                 <input autoComplete="organization-title" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })} placeholder="Role (optional)" aria-label="Role, optional" className="min-w-0 rounded-lg border border-border bg-canvas-raised px-3 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
+                <input autoComplete="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} placeholder="Phone (optional)" aria-label="Phone, optional" className="min-w-0 rounded-lg border border-border bg-canvas-raised px-3 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
               </div>
+              <textarea value={form.message} onChange={(event) => setForm({ ...form, message: event.target.value })} placeholder="How can we help? (optional)" aria-label="Message, optional" className="rounded-lg border border-border bg-canvas-raised px-3 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
               <select value={form.productInterest} onChange={(event) => setForm({ ...form, productInterest: event.target.value })} aria-label="Product interest, optional" className="rounded-lg border border-border bg-canvas-raised px-3 py-2.5 text-sm text-ink focus:border-accent focus:outline-none">
                 <option value="">Let my needs guide the recommendation</option>
                 <option value="SOURCE IQ">SOURCE IQ</option>
