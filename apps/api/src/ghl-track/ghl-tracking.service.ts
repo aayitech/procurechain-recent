@@ -46,6 +46,31 @@ export class GhlTrackingService {
   private readonly logger = new Logger(GhlTrackingService.name);
   constructor(private readonly config: ConfigService) {}
 
+  async sendDemoRequested(profile: GhlProfile, fields: Array<{ id: string; field_value: string }>, campaignEntryAsset: string): Promise<void> {
+    const token = this.config.get<string>('GHL_TOKEN');
+    const locationId = this.config.get<string>('GHL_LOCATION_ID');
+    const resultFields = [...fields];
+    if (token && locationId) {
+      try {
+        const response = await fetch('https://services.leadconnectorhq.com/contacts/search', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, Version: '2021-07-28', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ locationId, query: profile.email, pageLimit: 1 }),
+        });
+        if (response.ok) {
+          const result = await response.json() as { contacts?: Array<{ customFields?: Array<{ id?: string; value?: unknown; field_value?: unknown }> }> };
+          const current = result.contacts?.[0]?.customFields?.find((field) => field.id === '8f3HADSHCUHyMHkrL9UY');
+          if (!String(current?.value ?? current?.field_value ?? '').trim()) {
+            resultFields.push({ id: '8f3HADSHCUHyMHkrL9UY', field_value: campaignEntryAsset });
+          }
+        }
+      } catch (error) {
+        this.logger.warn(`Could not check existing Campaign Entry Asset: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+    await this.send(profile, resultFields, ['demo_requested']);
+  }
+
   async upsert(profile: GhlProfile, fields: Array<{ id: string; field_value: string }>, tags: string[]): Promise<boolean> {
     const token = this.config.get<string>('GHL_TOKEN');
     const locationId = this.config.get<string>('GHL_LOCATION_ID');

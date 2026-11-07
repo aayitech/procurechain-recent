@@ -31,12 +31,14 @@ export class GhlTrackController {
   async track(@Body() dto: GhlTrackDto, @Req() request: Request) {
     const bearer = request.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
     let profile = this.anonymousProfile(dto);
+    let knownUserId: string | undefined;
     if (bearer) {
       try {
         const payload = await this.jwt.verifyAsync<{ sub?: string }>(bearer);
         if (payload.sub) {
           const user = await this.prisma.user.findUnique({ where: { id: payload.sub }, include: { marketProfile: true } });
           if (user) {
+            knownUserId = user.id;
             profile = {
               email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone,
               company: user.company, country: user.country, city: user.marketProfile?.regionCity,
@@ -76,6 +78,21 @@ export class GhlTrackController {
       case 'login':
         add(FIELD_IDS.consentDate, new Date().toISOString().slice(0, 10));
         tags = ['login']; break;
+      case 'demo_requested': {
+        add(FIELD_IDS.consentDate, new Date().toISOString().slice(0, 10));
+        tags = ['demo_requested'];
+        const matchedLead = await this.prisma.lead.findFirst({ where: { email: { equals: profile.email, mode: 'insensitive' } }, orderBy: { createdAt: 'desc' } });
+        await this.prisma.engagementEvent.create({
+          data: {
+            sessionId: knownUserId ? `user:${knownUserId}` : `demo-request:${profile.email.toLowerCase()}`,
+            leadId: matchedLead?.id,
+            userId: knownUserId,
+            eventType: 'demo_requested', points: 0,
+            metadata: { ...(knownUserId ? { userId: knownUserId } : {}), email: profile.email },
+          },
+        });
+        break;
+      }
       case 'platform_registered':
         tags = ['platform_registered']; break;
     }
@@ -83,9 +100,14 @@ export class GhlTrackController {
       const value = asString(dto.utm?.[name]);
       if (value) add(FIELD_IDS[name], value.slice(0, 200));
     }
-    if (dto.campaignEntryAsset) add(FIELD_IDS.campaignEntryAsset, dto.campaignEntryAsset);
-    else if (dto.landingPage && !fields.some((field) => field.id === FIELD_IDS.campaignEntryAsset)) add(FIELD_IDS.campaignEntryAsset, dto.landingPage.slice(0, 200));
-    void this.tracking.send(profile, fields, tags);
+    if (dto.event !== 'demo_requested' && dto.campaignEntryAsset) add(FIELD_IDS.campaignEntryAsset, dto.campaignEntryAsset);
+    else if (dto.event !== 'demo_requested' && dto.landingPage && !fields.some((field) => field.id === FIELD_IDS.campaignEntryAsset)) add(FIELD_IDS.campaignEntryAsset, dto.landingPage.slice(0, 200));
+    if (dto.event === 'demo_requested') {
+      // Do not replace an existing campaign entry asset; GHL only receives this value on first touch here.
+      await this.tracking.sendDemoRequested(profile, fields, dto.campaignEntryAsset || 'Book a Demo form');
+    } else {
+      void this.tracking.send(profile, fields, tags);
+    }
     return { ok: true };
   }
 
@@ -93,8 +115,8 @@ export class GhlTrackController {
     const supplied = dto.profile ?? {};
     return {
       email: dto.email ?? '',
-      firstName: asString(supplied.firstName) ?? dto.firstName,
-      lastName: asString(supplied.lastName),
+      firstName: asString(supplied.firstName) ?? dto.firstName ?? asString(dto.fullName)?.split(/\s+/)[0],
+      lastName: asString(supplied.lastName) ?? (asString(dto.fullName)?.split(/\s+/).slice(1).join(' ') || undefined),
       phone: asString(supplied.phone),
       company: asString(supplied.company) ?? dto.companyName,
       country: asString(supplied.country),

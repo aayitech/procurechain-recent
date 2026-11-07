@@ -140,7 +140,7 @@ export class AuthService {
     });
 
     if (dto.mode === 'LOGIN') {
-      await this.prisma.engagementEvent.create({ data: { sessionId: `login:${user.id}:${now.getTime()}`, eventType: 'login', points: 0, metadata: { userId: user.id } } });
+      await this.prisma.engagementEvent.create({ data: { sessionId: `login:${user.id}:${now.getTime()}`, userId: user.id, eventType: 'login', points: 0, metadata: { userId: user.id } } });
       if (user.loginCount === 1) void this.ghlTracking.send(this.toGhlProfile(user), [{ id: '1L3KnrPJ2V1Qf6OLkAFe', field_value: now.toISOString().slice(0, 10) }], ['platform_active']);
       else void this.ghlTracking.send(this.toGhlProfile(user), [{ id: '1L3KnrPJ2V1Qf6OLkAFe', field_value: now.toISOString().slice(0, 10) }], []);
     }

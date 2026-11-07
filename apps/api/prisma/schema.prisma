@@ -43,6 +43,7 @@ model User {
   marketProfile UserMarketProfile?
   watchlist     WatchlistItem[]
   conversations Conversation[]
+  engagementEvents EngagementEvent[]
 
   @@index([email])
 }
@@ -347,6 +348,8 @@ model EngagementEvent {
   sessionId String
   leadId    String?
   lead      Lead?    @relation(fields: [leadId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   eventType String
   points    Int
   metadata  Json?
@@ -354,6 +357,7 @@ model EngagementEvent {
 
   @@index([sessionId])
   @@index([leadId])
+  @@index([userId])
 }
 
 enum MarketBriefStatus {

@@ -1,8 +1,8 @@
 import { IsEmail, IsIn, IsObject, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
 
 export class GhlTrackDto {
-  @IsIn(['health_started', 'health_completed', 'calculator_used', 'platform_registered', 'follow_up_requested', 'newsletter_subscribed', 'nader_engaged', 'benchmarking_used', 'login'])
-  event!: 'health_started' | 'health_completed' | 'calculator_used' | 'platform_registered' | 'follow_up_requested' | 'newsletter_subscribed' | 'nader_engaged' | 'benchmarking_used' | 'login';
+  @IsIn(['health_started', 'health_completed', 'calculator_used', 'platform_registered', 'follow_up_requested', 'newsletter_subscribed', 'nader_engaged', 'benchmarking_used', 'login', 'demo_requested'])
+  event!: 'health_started' | 'health_completed' | 'calculator_used' | 'platform_registered' | 'follow_up_requested' | 'newsletter_subscribed' | 'nader_engaged' | 'benchmarking_used' | 'login' | 'demo_requested';
 
   @IsOptional()
   @IsEmail()
@@ -29,6 +29,7 @@ export class GhlTrackDto {
   @IsOptional() @IsString() @MaxLength(200) campaignFit?: string;
   @IsOptional() @IsString() @MaxLength(200) campaignEntryAsset?: string;
   @IsOptional() @IsString() @MaxLength(300) landingPage?: string;
+  @IsOptional() @IsString() @MaxLength(200) fullName?: string;
 
   @IsOptional() @IsString() @MaxLength(100) firstName?: string;
   @IsOptional() @IsString() @MaxLength(200) companyName?: string;
