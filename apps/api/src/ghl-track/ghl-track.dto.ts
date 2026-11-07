@@ -1,8 +1,8 @@
 import { IsEmail, IsIn, IsObject, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
 
 export class GhlTrackDto {
-  @IsIn(['health_started', 'health_completed', 'calculator_used'])
-  event!: 'health_started' | 'health_completed' | 'calculator_used';
+  @IsIn(['health_started', 'health_completed', 'calculator_used', 'platform_registered'])
+  event!: 'health_started' | 'health_completed' | 'calculator_used' | 'platform_registered';
 
   @IsEmail()
   @MaxLength(254)
@@ -24,4 +24,5 @@ export class GhlTrackDto {
   @IsOptional() @IsString() @MaxLength(100) firstName?: string;
   @IsOptional() @IsString() @MaxLength(200) companyName?: string;
   @IsOptional() @IsObject() utm?: Record<string, string>;
+  @IsOptional() @IsObject() profile?: Record<string, unknown>;
 }

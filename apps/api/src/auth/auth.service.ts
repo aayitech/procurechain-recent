@@ -7,6 +7,7 @@ import { AuthEmailService } from './auth-email.service';
 import { RequestLoginCodeDto, type AuthMode } from './dto/request-login-code.dto';
 import { VerifyLoginCodeDto } from './dto/verify-login-code.dto';
 import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
+import { GhlProfile, GhlTrackingService } from '../ghl-track/ghl-tracking.service';
 
 const CODE_TTL_MINUTES = 10;
 const CODE_RESEND_COOLDOWN_MS = 60_000;
@@ -53,6 +54,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly email: AuthEmailService,
+    private readonly ghlTracking: GhlTrackingService,
   ) {}
 
   async requestLoginCode(dto: RequestLoginCodeDto): Promise<LoginCodeRequestedResult> {
@@ -137,6 +139,9 @@ export class AuthService {
       });
     });
 
+    if (dto.mode === 'SIGNUP') {
+      void this.ghlTracking.send({ email: user.email }, [], ['platform_registered']);
+    }
     return this.buildAuthResult(user);
   }
 
@@ -180,7 +185,20 @@ export class AuthService {
       },
       include: { marketProfile: true },
     });
+    void this.ghlTracking.send(this.toGhlProfile(user), [], ['platform_registered']);
     return this.buildUser(user);
+  }
+
+  private toGhlProfile(user: {
+    email: string; firstName: string | null; lastName: string | null; phone: string | null; company: string | null;
+    country: string | null; jobTitle: string | null; industry: string | null;
+    marketProfile: { regionCity: string | null; currency: string | null } | null;
+  }): GhlProfile {
+    return {
+      email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone, company: user.company,
+      country: user.country, city: user.marketProfile?.regionCity, jobTitle: user.jobTitle,
+      industry: user.industry, currency: user.marketProfile?.currency,
+    };
   }
 
   private async assertAccountMode(email: string, mode: AuthMode): Promise<void> {

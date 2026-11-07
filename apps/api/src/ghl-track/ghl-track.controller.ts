@@ -1,71 +1,88 @@
-import { Body, Controller, HttpException, HttpStatus, Logger, Post } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Body, Controller, Post, Req } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { Throttle } from '@nestjs/throttler';
+import type { Request } from 'express';
+import { PrismaService } from '../prisma/prisma.service';
+import { GhlProfile, GhlTrackingService } from './ghl-tracking.service';
 import { GhlTrackDto } from './ghl-track.dto';
 
 const FIELD_IDS = {
-  status: 'FTgvtleYsKkvBY82KDgr',
-  band: 'RwKyBStLVzUI1R3UhMHP',
-  area: 'sLvGFboICx6uHEIyKtYR',
-  tool: '6ffkrWfUJpTBamFw11Df',
-  utm_source: 'a2tt6FU9HK8vvWmXRYIp',
-  utm_medium: 'gorXK7yRmz2a8eBkzNzL',
-  utm_campaign: 'um8bvbd3WgRRNTKz8NIS',
+  status: 'FTgvtleYsKkvBY82KDgr', band: 'RwKyBStLVzUI1R3UhMHP', area: 'sLvGFboICx6uHEIyKtYR',
+  tool: '6ffkrWfUJpTBamFw11Df', utm_source: 'a2tt6FU9HK8vvWmXRYIp',
+  utm_medium: 'gorXK7yRmz2a8eBkzNzL', utm_campaign: 'um8bvbd3WgRRNTKz8NIS',
 } as const;
+
+function asString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
 
 @Controller('ghl-track')
 export class GhlTrackController {
-  private readonly logger = new Logger(GhlTrackController.name);
-
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly tracking: GhlTrackingService,
+    private readonly prisma: PrismaService,
+    private readonly jwt: JwtService,
+  ) {}
 
   @Post()
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
-  async track(@Body() dto: GhlTrackDto) {
-    const token = this.config.get<string>('GHL_TOKEN');
-    const locationId = this.config.get<string>('GHL_LOCATION_ID');
-    if (!token || !locationId) throw new HttpException('GHL tracking is not configured', HttpStatus.SERVICE_UNAVAILABLE);
+  async track(@Body() dto: GhlTrackDto, @Req() request: Request) {
+    const bearer = request.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+    let profile = this.anonymousProfile(dto);
+    if (bearer) {
+      try {
+        const payload = await this.jwt.verifyAsync<{ sub?: string }>(bearer);
+        if (payload.sub) {
+          const user = await this.prisma.user.findUnique({ where: { id: payload.sub }, include: { marketProfile: true } });
+          if (user) {
+            profile = {
+              email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone,
+              company: user.company, country: user.country, city: user.marketProfile?.regionCity,
+              jobTitle: user.jobTitle, industry: user.industry, currency: user.marketProfile?.currency,
+            };
+          }
+        }
+      } catch {
+        // Public tracking remains available when no valid login token is present.
+      }
+    }
 
-    const customFields: Array<{ id: string; field_value: string }> = [];
-    const addField = (id: string, value?: string) => { if (value) customFields.push({ id, field_value: value }); };
+    const fields: Array<{ id: string; field_value: string }> = [];
+    const add = (id: string, value?: string) => { if (value?.trim()) fields.push({ id, field_value: value.trim() }); };
     let tags: string[];
-    if (dto.event === 'health_started') {
-      addField(FIELD_IDS.status, 'Started');
-      tags = ['health_started'];
-    } else if (dto.event === 'health_completed') {
-      addField(FIELD_IDS.status, 'Completed');
-      addField(FIELD_IDS.band, dto.scoreBand);
-      addField(FIELD_IDS.area, dto.identifiedArea);
-      addField(FIELD_IDS.tool, 'Health Check');
-      tags = ['buyer_health_completed'];
-    } else {
-      addField(FIELD_IDS.tool, dto.calculator);
-      tags = ['calculator_used'];
+    switch (dto.event) {
+      case 'health_started':
+        add(FIELD_IDS.status, 'Started'); tags = ['health_started']; break;
+      case 'health_completed':
+        add(FIELD_IDS.status, 'Completed'); add(FIELD_IDS.band, dto.scoreBand); add(FIELD_IDS.area, dto.identifiedArea);
+        add(FIELD_IDS.tool, 'Health Check'); tags = ['buyer_health_completed']; break;
+      case 'calculator_used':
+        add(FIELD_IDS.tool, dto.calculator); tags = ['calculator_used']; break;
+      case 'platform_registered':
+        tags = ['platform_registered']; break;
     }
     for (const name of ['utm_source', 'utm_medium', 'utm_campaign'] as const) {
-      const value = dto.utm?.[name];
-      if (typeof value === 'string') addField(FIELD_IDS[name], value.slice(0, 200));
+      const value = asString(dto.utm?.[name]);
+      if (value) add(FIELD_IDS[name], value.slice(0, 200));
     }
+    void this.tracking.send(profile, fields, tags);
+    return { ok: true };
+  }
 
-    const headers = { Authorization: `Bearer ${token}`, Version: '2021-07-28', 'Content-Type': 'application/json' };
-    try {
-      const upsertResponse = await fetch('https://services.leadconnectorhq.com/contacts/upsert', {
-        method: 'POST', headers,
-        body: JSON.stringify({ locationId, email: dto.email, ...(dto.firstName ? { firstName: dto.firstName } : {}), ...(dto.companyName ? { companyName: dto.companyName } : {}), customFields }),
-      });
-      if (!upsertResponse.ok) throw new Error(`Contact upsert returned ${upsertResponse.status}`);
-      const upsert = await upsertResponse.json() as { contact?: { id?: string }; id?: string };
-      const contactId = upsert.contact?.id ?? upsert.id;
-      if (!contactId) throw new Error('Contact upsert response did not contain a contact id');
-
-      const tagResponse = await fetch(`https://services.leadconnectorhq.com/contacts/${encodeURIComponent(contactId)}/tags`, {
-        method: 'POST', headers, body: JSON.stringify({ tags }),
-      });
-      if (!tagResponse.ok) throw new Error(`Contact tagging returned ${tagResponse.status}`);
-      return { ok: true };
-    } catch (error) {
-      this.logger.error('GHL tracking failed', error instanceof Error ? error.stack : String(error));
-      throw new HttpException('GHL tracking failed', HttpStatus.BAD_GATEWAY);
-    }
+  private anonymousProfile(dto: GhlTrackDto): GhlProfile {
+    const supplied = dto.profile ?? {};
+    return {
+      email: dto.email,
+      firstName: asString(supplied.firstName) ?? dto.firstName,
+      lastName: asString(supplied.lastName),
+      phone: asString(supplied.phone),
+      company: asString(supplied.company) ?? dto.companyName,
+      country: asString(supplied.country),
+      city: asString(supplied.city),
+      website: asString(supplied.website),
+      jobTitle: asString(supplied.jobTitle),
+      industry: asString(supplied.industry),
+      currency: asString(supplied.currency),
+    };
   }
 }

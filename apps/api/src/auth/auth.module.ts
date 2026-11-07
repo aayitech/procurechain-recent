@@ -6,10 +6,12 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthEmailService } from './auth-email.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { GhlTrackModule } from '../ghl-track/ghl-track.module';
 
 @Module({
   imports: [
     PassportModule,
+    GhlTrackModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

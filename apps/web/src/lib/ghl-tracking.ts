@@ -1,3 +1,5 @@
+import { apiClient } from './api-client';
+
 export type GhlTrackingEvent =
   | { event: 'health_started'; email: string }
   | { event: 'health_completed'; email: string; scoreBand: 'Strong' | 'Developing' | 'Opportunity'; identifiedArea: string; firstName?: string; companyName?: string }
@@ -26,13 +28,8 @@ export function trackGhlEvent(event: GhlTrackingEvent): void {
     if (value) utm[name] = value.slice(0, 200);
   }
 
-  void fetch('/api/ghl-track', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...event, utm }),
-  }).then((response) => {
-    if (!response.ok) console.error('GHL tracking request failed:', response.status);
-  }).catch((error) => console.error('GHL tracking request failed:', error));
+  void apiClient.post<{ ok: boolean }>('/ghl-track', { ...event, utm })
+    .catch((error) => console.error('GHL tracking request failed:', error));
 }
 
 export function getEmailFromUrl(): string {
