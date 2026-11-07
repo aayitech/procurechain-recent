@@ -4,7 +4,7 @@ export type GhlTrackingEvent =
   | { event: 'health_started' }
   | { event: 'health_completed'; scoreBand: 'Strong' | 'Developing' | 'Opportunity'; identifiedArea: string }
   | { event: 'calculator_used'; email?: string; calculator: string }
-  | { event: 'follow_up_requested' | 'newsletter_subscribed' | 'nader_engaged' | 'benchmarking_used' | 'login'; email?: string; firstName?: string; lastName?: string; companyName?: string; phone?: string; message?: string; productInterest?: string; campaignFit?: string; campaignEntryAsset?: string; profile?: Record<string, unknown> };
+  | { event: 'follow_up_requested' | 'newsletter_subscribed' | 'nader_engaged' | 'benchmarking_used' | 'login' | 'demo_requested'; email?: string; firstName?: string; lastName?: string; companyName?: string; phone?: string; message?: string; productInterest?: string; campaignFit?: string; campaignEntryAsset?: string; profile?: Record<string, unknown> };
 
 const SENT_EVENTS_KEY = 'procurechain-ghl-events';
 
