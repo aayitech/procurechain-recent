@@ -18,7 +18,7 @@ function scoreColor(score: number) {
   return 'text-negative';
 }
 
-export function HealthCheckResult({ result, answers }: { result: HealthCheckScoreResult; answers: Record<string, string> }) {
+export function HealthCheckResult({ result, answers, email }: { result: HealthCheckScoreResult; answers: Record<string, string>; email: string }) {
   const { mutate, isPending, data: unlockedResult } = useSubmitHealthCheck();
   const track = useTrackEngagement();
 
@@ -121,7 +121,7 @@ export function HealthCheckResult({ result, answers }: { result: HealthCheckScor
           ))}
 
           {!unlocked && (
-            <HealthCheckLeadGate isPending={isPending} onSubmit={handleLeadSubmit} />
+            <HealthCheckLeadGate isPending={isPending} onSubmit={handleLeadSubmit} initialEmail={email} />
           )}
         </div>
       </div>

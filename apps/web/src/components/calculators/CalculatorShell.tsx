@@ -8,6 +8,7 @@ import { useTrackEngagement } from '@/hooks/useEngagement';
 import { getEngagementSessionId } from '@/lib/engagement';
 import { downloadCsv } from '@/lib/csv';
 import { captureCampaignAttribution, getCampaignAttribution, leadAttributionFields } from '@/lib/campaign-attribution';
+import { getEmailFromUrl, trackGhlEvent } from '@/lib/ghl-tracking';
 
 interface CalculatorShellProps {
   title: string;
@@ -23,15 +24,34 @@ export function CalculatorShell({ title, description, slug, csvFilename, getCsvR
   const [unlocked, setUnlocked] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
+  const [emailConfirmed, setEmailConfirmed] = useState(false);
   const [newsletterOptIn, setNewsletterOptIn] = useState(false);
   const { mutate, isPending } = useCreateLead();
   const track = useTrackEngagement();
 
   useEffect(() => {
     captureCampaignAttribution(window.location.search);
-    track('calculator_used', leadAttributionFields(getCampaignAttribution(), slug));
+    const calculator = slug === 'rfq-efficiency' ? 'RFQ Efficiency' : slug === 'tco' ? 'TCO' : slug === 'savings' ? 'Savings' : null;
+    if (calculator) {
+      const emailFromUrl = getEmailFromUrl();
+      if (emailFromUrl) {
+        setEmail(emailFromUrl);
+        setEmailConfirmed(true);
+        trackGhlEvent({ event: 'calculator_used', email: emailFromUrl, calculator });
+      }
+      else setEmail('');
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function handleCalculatorEmail(event: FormEvent) {
+    event.preventDefault();
+    const calculator = slug === 'rfq-efficiency' ? 'RFQ Efficiency' : slug === 'tco' ? 'TCO' : slug === 'savings' ? 'Savings' : null;
+    if (calculator) {
+      setEmailConfirmed(true);
+      trackGhlEvent({ event: 'calculator_used', email, calculator });
+    }
+  }
 
   function handleDownloadClick() {
     if (unlocked) {
@@ -73,7 +93,16 @@ export function CalculatorShell({ title, description, slug, csvFilename, getCsvR
       <h1 className="mt-4 text-3xl font-semibold text-ink">{title}</h1>
       <p className="mt-2 max-w-2xl text-ink-muted">{description}</p>
 
-      <div className="mt-8">{children}</div>
+      {['rfq-efficiency', 'tco', 'savings'].includes(slug) && !emailConfirmed ? (
+        <form onSubmit={handleCalculatorEmail} className="card mt-8 max-w-md p-6">
+          <h2 className="text-lg font-semibold text-ink">View your calculator result</h2>
+          <p className="mt-2 text-sm text-ink-muted">Enter your email to see the result.</p>
+          <input required type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Work email" className="mt-4 w-full rounded-lg border border-border bg-canvas-raised px-3 py-2 text-sm text-ink" />
+          <button className="mt-3 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white">Show result</button>
+        </form>
+      ) : (
+        <div className="mt-8">{children}</div>
+      )}
 
       <div className="mt-8 border-t border-border-subtle pt-6">
         {!showGate ? (

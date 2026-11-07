@@ -62,6 +62,14 @@ class EnvironmentVariables {
 
   @IsString()
   @IsOptional()
+  GHL_TOKEN?: string;
+
+  @IsString()
+  @IsOptional()
+  GHL_LOCATION_ID?: string;
+
+  @IsString()
+  @IsOptional()
   RESEND_API_KEY?: string;
 
   @IsString()

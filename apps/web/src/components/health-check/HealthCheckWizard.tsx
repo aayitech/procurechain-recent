@@ -7,9 +7,11 @@ import type { HealthCheckQuestion } from '@/types/health-check';
 export function HealthCheckWizard({
   questions,
   onComplete,
+  onFirstAnswer,
 }: {
   questions: HealthCheckQuestion[];
   onComplete: (answers: Record<string, string>) => void;
+  onFirstAnswer?: () => void;
 }) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -18,6 +20,7 @@ export function HealthCheckWizard({
   const progress = ((index + 1) / questions.length) * 100;
 
   function selectAnswer(answerKey: string) {
+    if (index === 0 && !answers[question.id]) onFirstAnswer?.();
     const next = { ...answers, [question.id]: answerKey };
     setAnswers(next);
     if (index < questions.length - 1) {

@@ -17,14 +17,16 @@ export interface HealthCheckLeadFormValues {
 export function HealthCheckLeadGate({
   isPending,
   onSubmit,
+  initialEmail = '',
 }: {
   isPending: boolean;
   onSubmit: (values: HealthCheckLeadFormValues) => void;
+  initialEmail?: string;
 }) {
   const [values, setValues] = useState<HealthCheckLeadFormValues>({
     firstName: '',
     lastName: '',
-    email: '',
+    email: initialEmail,
     company: '',
     jobTitle: '',
     country: '',

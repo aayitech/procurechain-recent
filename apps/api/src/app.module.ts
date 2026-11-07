@@ -18,6 +18,7 @@ import { MarketBriefModule } from './market-brief/market-brief.module';
 import { EngagementModule } from './engagement/engagement.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
 import { MarketIntelligenceModule } from './market-intelligence/market-intelligence.module';
+import { GhlTrackModule } from './ghl-track/ghl-track.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -44,6 +45,7 @@ import { AppController } from './app.controller';
     EngagementModule,
     KnowledgeModule,
     MarketIntelligenceModule,
+    GhlTrackModule,
   ],
   controllers: [AppController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
