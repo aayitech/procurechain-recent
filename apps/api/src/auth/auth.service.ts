@@ -140,7 +140,10 @@ export class AuthService {
     });
 
     if (dto.mode === 'SIGNUP') {
-      void this.ghlTracking.send({ email: user.email }, [], ['platform_registered']);
+      const signupFields = dto.campaignEntryAsset === 'Health Check'
+        ? [{ id: '8f3HADSHCUHyMHkrL9UY', field_value: 'Health Check' }]
+        : [];
+      void this.ghlTracking.send({ email: user.email }, signupFields, ['platform_registered']);
     }
     return this.buildAuthResult(user);
   }

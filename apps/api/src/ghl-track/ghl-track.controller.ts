@@ -50,6 +50,7 @@ export class GhlTrackController {
         // Public tracking remains available when no valid login token is present.
       }
     }
+    if (!profile.email) return { ok: false };
 
     const fields: Array<{ id: string; field_value: string }> = [];
     const add = (id: string, value?: string) => { if (value?.trim()) fields.push({ id, field_value: value.trim() }); };
@@ -76,7 +77,7 @@ export class GhlTrackController {
   private anonymousProfile(dto: GhlTrackDto): GhlProfile {
     const supplied = dto.profile ?? {};
     return {
-      email: dto.email,
+      email: dto.email ?? '',
       firstName: asString(supplied.firstName) ?? dto.firstName,
       lastName: asString(supplied.lastName),
       phone: asString(supplied.phone),

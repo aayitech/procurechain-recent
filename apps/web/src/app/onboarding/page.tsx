@@ -17,6 +17,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const { hydrated, user } = useAuthStore();
   const completeOnboarding = useCompleteOnboarding();
+  const [returnTo, setReturnTo] = useState('/market-brief');
   const [form, setForm] = useState({
     firstName: '', lastName: '', company: '', jobTitle: '', phone: '', country: '', regionCity: '',
     preferredCurrency: 'USD', industry: '', procurementCategories: '', commodities: '', purchaseMix: '',
@@ -24,8 +25,21 @@ export default function OnboardingPage() {
   });
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedReturnTo = params.get('returnTo');
+    if (requestedReturnTo?.startsWith('/') && !requestedReturnTo.startsWith('//')) setReturnTo(requestedReturnTo);
+  }, []);
+
+  useEffect(() => {
     if (!hydrated) return;
-    if (!user) router.replace('/register');
+    if (!user) {
+      const params = new URLSearchParams(window.location.search);
+      const requestedReturnTo = params.get('returnTo');
+      const loginUrl = requestedReturnTo?.startsWith('/') && !requestedReturnTo.startsWith('//')
+        ? `/register?returnTo=${encodeURIComponent(requestedReturnTo)}`
+        : '/register';
+      router.replace(loginUrl);
+    }
     else if (user.onboardingCompletedAt !== null) router.replace('/');
   }, [hydrated, router, user]);
 
@@ -43,7 +57,7 @@ export default function OnboardingPage() {
       purchaseMix: form.purchaseMix || undefined, sourcingCountries: splitList(form.sourcingCountries),
       tradeLanes: splitList(form.tradeLanes), procurementChallenges: splitList(form.procurementChallenges),
       newsletterOptIn: form.newsletterOptIn,
-    }, { onSuccess: () => router.replace('/market-brief') });
+    }, { onSuccess: () => router.replace(returnTo) });
   }
 
   if (!hydrated || !user || user.onboardingCompletedAt !== null) {

@@ -1,4 +1,4 @@
-import { IsEmail, IsIn, Matches } from 'class-validator';
+import { IsEmail, IsIn, IsOptional, Matches } from 'class-validator';
 import type { AuthMode } from './request-login-code.dto';
 
 export class VerifyLoginCodeDto {
@@ -10,4 +10,8 @@ export class VerifyLoginCodeDto {
 
   @IsIn(['LOGIN', 'SIGNUP'])
   mode!: AuthMode;
+
+  @IsOptional()
+  @IsIn(['Health Check'])
+  campaignEntryAsset?: 'Health Check';
 }

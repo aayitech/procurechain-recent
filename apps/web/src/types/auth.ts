@@ -43,6 +43,7 @@ export interface VerifyLoginCodeInput {
   email: string;
   code: string;
   mode: 'LOGIN' | 'SIGNUP';
+  campaignEntryAsset?: 'Health Check';
 }
 
 export interface CompleteOnboardingInput {

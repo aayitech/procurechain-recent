@@ -3,61 +3,53 @@
 import { useEffect, useState } from 'react';
 import { useHealthCheckQuestions, useScoreHealthCheck } from '@/hooks/useHealthCheck';
 import { useTrackEngagement } from '@/hooks/useEngagement';
-import { HealthCheckIntro } from '@/components/health-check/HealthCheckIntro';
 import { HealthCheckWizard } from '@/components/health-check/HealthCheckWizard';
 import { HealthCheckResult } from '@/components/health-check/HealthCheckResult';
 import { captureCampaignAttribution, getCampaignAttribution, leadAttributionFields } from '@/lib/campaign-attribution';
-import { getEmailFromUrl, trackGhlEvent } from '@/lib/ghl-tracking';
+import { trackGhlEvent } from '@/lib/ghl-tracking';
+import { PasswordlessAuthForm } from '@/components/auth/PasswordlessAuthForm';
+import { useAuthStore } from '@/store/auth-store';
 
-type Phase = 'intro' | 'email' | 'wizard' | 'email-result' | 'result';
+type Phase = 'wizard' | 'result';
 
 export default function HealthCheckPage() {
-  const [phase, setPhase] = useState<Phase>('intro');
+  const [phase, setPhase] = useState<Phase>('wizard');
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [email, setEmail] = useState('');
   const { data: questions, isLoading } = useHealthCheckQuestions();
   const { mutate: scoreMutate, data: result, isPending: isScoring } = useScoreHealthCheck();
   const track = useTrackEngagement();
+  const { hydrated, user } = useAuthStore();
 
   useEffect(() => {
     captureCampaignAttribution(window.location.search);
-    setEmail(getEmailFromUrl());
   }, []);
 
-  function handleStart() {
-    track('assessment_started', leadAttributionFields(getCampaignAttribution(), 'procurement-health-check'));
-    setPhase(email ? 'wizard' : 'email');
-  }
+  useEffect(() => {
+    if (phase !== 'result' || !result) return;
+    const weakest = [...result.dimensions].sort((a, b) => a.score - b.score)[0];
+    const band = result.overallScore >= 75 ? 'Strong' : result.overallScore >= 40 ? 'Developing' : 'Opportunity';
+    trackGhlEvent({ event: 'health_completed', scoreBand: band, identifiedArea: result.topOpportunities[0]?.label ?? weakest?.label ?? 'General' });
+  }, [phase, result]);
 
   function handleComplete(finalAnswers: Record<string, string>) {
     setAnswers(finalAnswers);
-    if (!email) setPhase('email-result');
-    else submitAnswers(finalAnswers);
+    submitAnswers(finalAnswers);
   }
 
   function submitAnswers(finalAnswers: Record<string, string>) {
-    trackGhlEvent({ event: 'health_started', email });
     scoreMutate(finalAnswers, {
-      onSuccess: (scored) => {
-        const weakest = [...scored.dimensions].sort((a, b) => a.score - b.score)[0];
-        const band = scored.overallScore >= 75 ? 'Strong' : scored.overallScore >= 40 ? 'Developing' : 'Opportunity';
-        trackGhlEvent({ event: 'health_completed', email, scoreBand: band, identifiedArea: scored.topOpportunities[0]?.label ?? weakest?.label ?? 'General' });
+      onSuccess: () => {
         track('assessment_completed', leadAttributionFields(getCampaignAttribution(), 'procurement-health-check'));
         setPhase('result');
       },
     });
   }
 
-  function handleEmailSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (Object.keys(answers).length === 0) setPhase('wizard');
-    else submitAnswers(answers);
-  }
+  if (!hydrated) return <div className="container-page py-20 text-center text-sm text-ink-muted">Checking your login…</div>;
+  if (!user) return <PasswordlessAuthForm mode="LOGIN" />;
 
   return (
     <div className="container-page py-16">
-      {phase === 'intro' && <HealthCheckIntro onStart={handleStart} />}
-
       {phase === 'wizard' && (
         isLoading || !questions ? (
           <div className="mx-auto max-w-2xl">
@@ -65,7 +57,7 @@ export default function HealthCheckPage() {
             <div className="mt-8 h-24 animate-pulse rounded-xl2 bg-canvas-overlay" />
           </div>
         ) : (
-          <HealthCheckWizard questions={questions} onComplete={handleComplete} onFirstAnswer={() => trackGhlEvent({ event: 'health_started', email })} />
+          <HealthCheckWizard questions={questions} onComplete={handleComplete} onFirstAnswer={() => trackGhlEvent({ event: 'health_started' })} />
         )
       )}
 
@@ -73,16 +65,7 @@ export default function HealthCheckPage() {
         <p className="mt-6 text-center text-sm text-ink-faint">Scoring your responses…</p>
       )}
 
-      {(phase === 'email' || phase === 'email-result') && (
-        <form onSubmit={handleEmailSubmit} className="card mx-auto max-w-md p-6">
-          <h2 className="text-lg font-semibold text-ink">{phase === 'email' ? 'Start your Health Check' : 'See your Health Check result'}</h2>
-          <p className="mt-2 text-sm text-ink-muted">Enter your email to {phase === 'email' ? 'begin the assessment' : 'view your procurement health score'}.</p>
-          <input required type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Work email" className="mt-4 w-full rounded-lg border border-border bg-canvas-raised px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none" />
-          <button type="submit" disabled={isScoring} className="mt-4 w-full rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-60">{isScoring ? 'Scoring…' : phase === 'email' ? 'Continue' : 'Show my result'}</button>
-        </form>
-      )}
-
-      {phase === 'result' && result && <HealthCheckResult result={result} answers={answers} email={email} />}
+      {phase === 'result' && result && <HealthCheckResult result={result} answers={answers} email={user.email} />}
     </div>
   );
 }

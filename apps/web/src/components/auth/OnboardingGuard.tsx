@@ -17,7 +17,12 @@ export function OnboardingGuard() {
     // a newly created account should trigger the form.
     if (!hydrated || !user || user.onboardingCompletedAt !== null) return;
     if (ONBOARDING_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))) return;
-    router.replace('/onboarding');
+    if (pathname === '/health-check') {
+      const returnTo = `${window.location.pathname}${window.location.search}`;
+      router.replace(`/onboarding?returnTo=${encodeURIComponent(returnTo)}`);
+    } else {
+      router.replace('/onboarding');
+    }
   }, [hydrated, pathname, router, user]);
 
   return null;

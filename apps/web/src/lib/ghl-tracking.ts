@@ -1,8 +1,8 @@
 import { apiClient } from './api-client';
 
 export type GhlTrackingEvent =
-  | { event: 'health_started'; email: string }
-  | { event: 'health_completed'; email: string; scoreBand: 'Strong' | 'Developing' | 'Opportunity'; identifiedArea: string; firstName?: string; companyName?: string }
+  | { event: 'health_started' }
+  | { event: 'health_completed'; scoreBand: 'Strong' | 'Developing' | 'Opportunity'; identifiedArea: string }
   | { event: 'calculator_used'; email: string; calculator: 'RFQ Efficiency' | 'TCO' | 'Savings' };
 
 const SENT_EVENTS_KEY = 'procurechain-ghl-events';

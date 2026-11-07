@@ -4,9 +4,10 @@ export class GhlTrackDto {
   @IsIn(['health_started', 'health_completed', 'calculator_used', 'platform_registered'])
   event!: 'health_started' | 'health_completed' | 'calculator_used' | 'platform_registered';
 
+  @IsOptional()
   @IsEmail()
   @MaxLength(254)
-  email!: string;
+  email?: string;
 
   @ValidateIf((dto: GhlTrackDto) => dto.event === 'health_completed')
   @IsIn(['Strong', 'Developing', 'Opportunity'])

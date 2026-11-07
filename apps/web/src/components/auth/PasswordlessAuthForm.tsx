@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRequestLoginCode, useVerifyLoginCode } from '@/hooks/useAuth';
 
@@ -15,7 +15,25 @@ export function PasswordlessAuthForm({ mode }: { mode: AuthMode }) {
   const [code, setCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const [developmentCode, setDevelopmentCode] = useState<string | null>(null);
+  const [returnTo, setReturnTo] = useState('');
   const isSignup = mode === 'SIGNUP';
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedReturnTo = params.get('returnTo');
+    const hasSafeReturnTo = Boolean(requestedReturnTo?.startsWith('/') && !requestedReturnTo.startsWith('//'));
+    const target = hasSafeReturnTo
+      ? requestedReturnTo!
+      : window.location.pathname === '/health-check' ? `${window.location.pathname}${window.location.search}` : '/';
+    setReturnTo(hasSafeReturnTo || window.location.pathname === '/health-check' ? target : '');
+    const targetUrl = new URL(target, window.location.origin);
+    const prefilledEmail = params.get('email') || targetUrl.searchParams.get('email');
+    if (prefilledEmail) setEmail(prefilledEmail);
+  }, []);
+
+  const returnToQuery = encodeURIComponent(returnTo);
+  const registerHref = returnTo ? `/register?returnTo=${returnToQuery}` : '/register';
+  const loginHref = returnTo ? `/login?returnTo=${returnToQuery}` : '/login';
 
   function sendCode() {
     requestCode.mutate(
@@ -38,9 +56,14 @@ export function PasswordlessAuthForm({ mode }: { mode: AuthMode }) {
 
   function handleVerifyCode(event: FormEvent) {
     event.preventDefault();
+    const target = new URL(returnTo, window.location.origin);
+    const healthCheckSignup = isSignup && target.pathname === '/health-check';
     verifyCode.mutate(
-      { email, code, mode },
-      { onSuccess: (result) => router.push(result.user.onboardingCompletedAt ? '/' : '/onboarding') },
+      { email, code, mode, ...(healthCheckSignup ? { campaignEntryAsset: 'Health Check' } : {}) },
+      { onSuccess: (result) => {
+        if (result.user.onboardingCompletedAt) router.push(returnTo || '/');
+        else router.push(`/onboarding${returnTo ? `?returnTo=${returnToQuery}${healthCheckSignup ? '&entryAsset=Health%20Check' : ''}` : ''}`);
+      } },
     );
   }
 
@@ -89,7 +112,7 @@ export function PasswordlessAuthForm({ mode }: { mode: AuthMode }) {
         )}
 
         <p className="mt-6 text-center text-xs leading-5 text-ink-muted">
-          {isSignup ? <>Already registered? <Link href="/login" className="text-accent hover:underline">Log in</Link>.</> : <>New to ProcureChain? <Link href="/register" className="text-accent hover:underline">Create an account</Link>.</>}
+          {isSignup ? <>Already registered? <Link href={loginHref} className="text-accent hover:underline">Log in</Link>.</> : <>New to ProcureChain? <Link href={registerHref} className="text-accent hover:underline">Create an account</Link>.</>}
         </p>
       </div>
     </div>
