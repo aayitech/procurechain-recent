@@ -192,12 +192,20 @@ export class AuthService {
   private toGhlProfile(user: {
     email: string; firstName: string | null; lastName: string | null; phone: string | null; company: string | null;
     country: string | null; jobTitle: string | null; industry: string | null;
-    marketProfile: { regionCity: string | null; currency: string | null } | null;
+    newsletterOptIn: boolean;
+    marketProfile: {
+      regionCity: string | null; currency: string | null; procurementCategories: string[]; commodities: string[];
+      purchaseMix: string | null; sourcingCountries: string[]; tradeLanes: string[]; procurementChallenges: string[];
+    } | null;
   }): GhlProfile {
     return {
       email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone, company: user.company,
       country: user.country, city: user.marketProfile?.regionCity, jobTitle: user.jobTitle,
       industry: user.industry, currency: user.marketProfile?.currency,
+      procurementCategories: user.marketProfile?.procurementCategories,
+      commodities: user.marketProfile?.commodities, purchaseMix: user.marketProfile?.purchaseMix,
+      sourcingCountries: user.marketProfile?.sourcingCountries, tradeLanes: user.marketProfile?.tradeLanes,
+      procurementChallenges: user.marketProfile?.procurementChallenges, newsletterOptIn: user.newsletterOptIn,
     };
   }
 

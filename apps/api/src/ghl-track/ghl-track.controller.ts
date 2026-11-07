@@ -39,6 +39,10 @@ export class GhlTrackController {
               email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone,
               company: user.company, country: user.country, city: user.marketProfile?.regionCity,
               jobTitle: user.jobTitle, industry: user.industry, currency: user.marketProfile?.currency,
+              procurementCategories: user.marketProfile?.procurementCategories, commodities: user.marketProfile?.commodities,
+              purchaseMix: user.marketProfile?.purchaseMix, sourcingCountries: user.marketProfile?.sourcingCountries,
+              tradeLanes: user.marketProfile?.tradeLanes, procurementChallenges: user.marketProfile?.procurementChallenges,
+              newsletterOptIn: user.newsletterOptIn,
             };
           }
         }
@@ -83,6 +87,18 @@ export class GhlTrackController {
       jobTitle: asString(supplied.jobTitle),
       industry: asString(supplied.industry),
       currency: asString(supplied.currency),
+      procurementCategories: this.asStringList(supplied.procurementCategories),
+      commodities: this.asStringList(supplied.commodities),
+      purchaseMix: asString(supplied.purchaseMix),
+      sourcingCountries: this.asStringList(supplied.sourcingCountries),
+      tradeLanes: this.asStringList(supplied.tradeLanes),
+      procurementChallenges: this.asStringList(supplied.procurementChallenges),
+      newsletterOptIn: typeof supplied.newsletterOptIn === 'boolean' ? supplied.newsletterOptIn : undefined,
     };
+  }
+
+  private asStringList(value: unknown): string[] | undefined {
+    if (!Array.isArray(value)) return undefined;
+    return value.filter((item): item is string => typeof item === 'string').map((item) => item.trim()).filter(Boolean);
   }
 }
